@@ -17,3 +17,21 @@ feat 2: add ollama_client with async HTTP and retry logic
 - unload_model() to free VRAM
 - retry logic: configurable attempts and delay
 - 12 unit tests, all passing"
+
+feat 3: add model_registry with role and ID based lookup
+
+- load models from config/models.json
+- get_model_by_role() for role-based model selection
+- get_model_by_id() for direct model lookup
+- list_registered_models() for all configured models
+- list_available_models() cross-references with Ollama
+- ModelNotFoundError for missing models
+- 11 unit tests, all passing"
+
+feat 4: add memory_manager with adaptive skills and error tracking
+
+- skills.json tracking with success rate calculation
+- errors.json with log, resolve and scan functionality
+- scan_errors() proactively finds known fixes before tasks
+- training_candidates.json for future fine-tune data
+- 20 unit tests, all passing"
