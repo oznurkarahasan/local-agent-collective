@@ -14,6 +14,7 @@ from backend.core.ollama_client import OllamaClient
 
 class ModelNotFoundError(Exception):
     """Raised when a requested model is not found in registry."""
+
     pass
 
 
@@ -38,9 +39,7 @@ class ModelRegistry:
     def _load(self) -> None:
         """Load model definitions from config file."""
         if not self.config_path.exists():
-            raise FileNotFoundError(
-                f"Model config not found: {self.config_path}"
-            )
+            raise FileNotFoundError(f"Model config not found: {self.config_path}")
 
         with open(self.config_path, "r", encoding="utf-8") as f:
             data = json.load(f)

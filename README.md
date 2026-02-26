@@ -292,6 +292,9 @@ See [TODO.md](TODO.md) for the full task list.
 ```bash
 ## run tests
 docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
+
+## run before commit
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test black backend/core/model_registry.py
 ```
 
 > **"Your data stays with you."**
