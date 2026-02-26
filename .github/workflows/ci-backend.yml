@@ -1,0 +1,46 @@
+name: CI Backend
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'requirements.txt'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'requirements.txt'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          if find backend/ -name "*.py" ! -name "__init__.py" | grep -q .; then
+            flake8 backend/ --max-line-length=100
+          else
+            echo "No Python source files yet, skipping flake8"
+          fi
+
+      - name: Check formatting with black
+        run: |
+          if find backend/ -name "*.py" ! -name "__init__.py" | grep -q .; then
+            black --check backend/
+          else
+            echo "No Python source files yet, skipping black"
+          fi
+
+      - name: Run backend tests
+        run: pytest tests/backend/ -v --cov=backend

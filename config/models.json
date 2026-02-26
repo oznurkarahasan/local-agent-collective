@@ -1,0 +1,36 @@
+{
+  "models": [
+    {
+      "id": "deepseek-r1:7b",
+      "roles": ["orchestration", "planning", "reasoning"],
+      "context_window": 131072,
+      "languages": ["en", "tr"],
+      "size_gb": 4.7,
+      "keep_alive": "0"
+    },
+    {
+      "id": "qwen3:4b",
+      "roles": ["rag", "reasoning", "multilingual"],
+      "context_window": 32768,
+      "languages": ["en", "tr", "zh"],
+      "size_gb": 2.5,
+      "keep_alive": "0"
+    },
+    {
+      "id": "qwen2.5-coder:3b",
+      "roles": ["code_analysis", "code_generation"],
+      "context_window": 32768,
+      "languages": ["code"],
+      "size_gb": 1.9,
+      "keep_alive": "0"
+    },
+    {
+      "id": "nomic-embed-text:v1.5",
+      "roles": ["embedding"],
+      "context_window": 8192,
+      "languages": ["multilingual"],
+      "size_gb": 0.274,
+      "keep_alive": "0"
+    }
+  ]
+}

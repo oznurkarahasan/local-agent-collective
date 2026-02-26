@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: local-agent-app
+    volumes:
+      - ..:/app
+      - agent-data:/app/data
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - PYTHONPATH=/app
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - agent-network
+    stdin_open: true
+    tty: true
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: local-agent-ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agent-network
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+    driver: local
+  agent-data:
+    driver: local
+
+networks:
+  agent-network:
+    driver: bridge

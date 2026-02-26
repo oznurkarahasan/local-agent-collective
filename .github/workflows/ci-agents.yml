@@ -1,0 +1,44 @@
+name: CI Agents
+
+on:
+  push:
+    paths:
+      - 'agents/**'
+  pull_request:
+    paths:
+      - 'agents/**'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          if find agents/ -name "*.py" ! -name "__init__.py" | grep -q .; then
+            flake8 agents/ --max-line-length=100
+          else
+            echo "No Python source files yet, skipping flake8"
+          fi
+
+      - name: Check formatting with black
+        run: |
+          if find agents/ -name "*.py" ! -name "__init__.py" | grep -q .; then
+            black --check agents/
+          else
+            echo "No Python source files yet, skipping black"
+          fi
+
+      - name: Run agent tests
+        run: pytest tests/agents/ -v --cov=agents
