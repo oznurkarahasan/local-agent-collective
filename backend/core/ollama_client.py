@@ -14,11 +14,13 @@ from backend.core.platform_utils import PlatformUtils
 
 class OllamaConnectionError(Exception):
     """Raised when Ollama service is unreachable."""
+
     pass
 
 
 class OllamaModelError(Exception):
     """Raised when a model operation fails."""
+
     pass
 
 
