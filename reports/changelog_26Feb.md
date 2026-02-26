@@ -35,3 +35,12 @@ feat 4: add memory_manager with adaptive skills and error tracking
 - scan_errors() proactively finds known fixes before tasks
 - training_candidates.json for future fine-tune data
 - 20 unit tests, all passing"
+
+feat 5: add agent_base with adaptive memory integration
+
+- abstract AgentBase class with required interface
+- run() with pre-task error scan and post-task skill update
+- automatic error logging on failure
+- automatic training sample generation on success
+- get_agent_info() for agent status
+- 16 unit tests, all passing"
