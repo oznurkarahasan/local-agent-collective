@@ -27,3 +27,11 @@ feat 3: add model_registry with role and ID based lookup
 - list_available_models() cross-references with Ollama
 - ModelNotFoundError for missing models
 - 11 unit tests, all passing"
+
+feat 4: add memory_manager with adaptive skills and error tracking
+
+- skills.json tracking with success rate calculation
+- errors.json with log, resolve and scan functionality
+- scan_errors() proactively finds known fixes before tasks
+- training_candidates.json for future fine-tune data
+- 20 unit tests, all passing"
