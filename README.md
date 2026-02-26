@@ -287,4 +287,11 @@ See [TODO.md](TODO.md) for the full task list.
 
 ---
 
+## Shortcuts
+
+```bash
+## run tests
+docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
+```
+
 > **"Your data stays with you."**
