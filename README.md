@@ -293,8 +293,9 @@ See [TODO.md](TODO.md) for the full task list.
 ## run tests
 docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
 
-## run before commit
+## run before commit your current file
 sudo docker run --rm -v $(pwd):/app local-agent-collective:test black backend/core/model_registry.py
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/core/agent_base.py --max-line-length=100
 ```
 
 > **"Your data stays with you."**
