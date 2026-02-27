@@ -44,3 +44,14 @@ feat 5: add agent_base with adaptive memory integration
 - automatic training sample generation on success
 - get_agent_info() for agent status
 - 16 unit tests, all passing"
+
+feat 6: add agent_registry with auto-discovery
+
+- auto-scans agents/ directory on initialization
+- loads enabled agents from config.json
+- dynamically imports agent.py classes
+- find_by_capability() for capability-based lookup
+- find_by_input_type() for file type routing
+- get_class() returns importable agent class
+- is_registered() for membership check
+- 18 unit tests, all passing"
