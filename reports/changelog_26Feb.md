@@ -35,3 +35,23 @@ feat 4: add memory_manager with adaptive skills and error tracking
 - scan_errors() proactively finds known fixes before tasks
 - training_candidates.json for future fine-tune data
 - 20 unit tests, all passing"
+
+feat 5: add agent_base with adaptive memory integration
+
+- abstract AgentBase class with required interface
+- run() with pre-task error scan and post-task skill update
+- automatic error logging on failure
+- automatic training sample generation on success
+- get_agent_info() for agent status
+- 16 unit tests, all passing"
+
+feat 6: add agent_registry with auto-discovery
+
+- auto-scans agents/ directory on initialization
+- loads enabled agents from config.json
+- dynamically imports agent.py classes
+- find_by_capability() for capability-based lookup
+- find_by_input_type() for file type routing
+- get_class() returns importable agent class
+- is_registered() for membership check
+- 18 unit tests, all passing"

@@ -58,65 +58,65 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 > Branch: `feature/core-layer`
 
 ### `backend/core/platform_utils.py`
-- [ ] `get_base_dir()` → platform-specific data directory (Linux/macOS/Windows)
-- [ ] `get_ollama_url()` → `http://localhost:11434`
-- [ ] `is_ollama_running()` → service check (systemctl / tasklist)
-- [ ] `get_ollama_install_instructions()` → platform-specific instructions
-- [ ] `tests/backend/test_platform_utils.py`
+- [x] `get_base_dir()` → platform-specific data directory (Linux/macOS/Windows)
+- [x] `get_ollama_url()` → `http://localhost:11434`
+- [x] `is_ollama_running()` → service check (systemctl / tasklist)
+- [x] `get_ollama_install_instructions()` → platform-specific instructions
+- [x] `tests/backend/test_platform_utils.py`
 
 ### `backend/core/ollama_client.py`
-- [ ] Async HTTP client (`httpx`)
-- [ ] `ping()` → is Ollama reachable?
-- [ ] `list_models()` → installed models
-- [ ] `pull_model(model_id)` → download model
-- [ ] `chat(model, messages, keep_alive="0")` → completion request
-- [ ] `embed(model, text)` → embedding request
-- [ ] `unload_model(model_id)` → drop model from memory
-- [ ] Connection error handling (retry + descriptive message)
-- [ ] `tests/backend/test_ollama_client.py`
+- [x] Async HTTP client (`httpx`)
+- [x] `ping()` → is Ollama reachable?
+- [x] `list_models()` → installed models
+- [x] `pull_model(model_id)` → download model
+- [x] `chat(model, messages, keep_alive="0")` → completion request
+- [x] `embed(model, text)` → embedding request
+- [x] `unload_model(model_id)` → drop model from memory
+- [x] Connection error handling (retry + descriptive message)
+- [x] `tests/backend/test_ollama_client.py`
 
 ### `backend/core/model_registry.py`
-- [ ] Read `config/models.json`
-- [ ] `get_model_by_role(role)` → returns model for given role
-- [ ] `get_model_by_id(model_id)` → returns model details
-- [ ] `list_available_models()` → fetch from Ollama, match with config
-- [ ] `tests/backend/test_model_registry.py`
+- [x] Read `config/models.json`
+- [x] `get_model_by_role(role)` → returns model for given role
+- [x] `get_model_by_id(model_id)` → returns model details
+- [x] `list_available_models()` → fetch from Ollama, match with config
+- [x] `tests/backend/test_model_registry.py`
 
 ### `backend/core/memory_manager.py`
-- [ ] Create and read `skills.json`
-- [ ] Create and read `errors.json`
-- [ ] `log_error(error_type, context, solution)`
-- [ ] `resolve_error(error_id)`
-- [ ] `scan_errors(context)` → check for similar past errors
-- [ ] `update_skill_rate(skill_id, success: bool)`
-- [ ] `tests/backend/test_memory_manager.py`
+- [x] Create and read `skills.json`
+- [x] Create and read `errors.json`
+- [x] `log_error(error_type, context, solution)`
+- [x] `resolve_error(error_id)`
+- [x] `scan_errors(context)` → check for similar past errors
+- [x] `update_skill_rate(skill_id, success: bool)`
+- [x] `tests/backend/test_memory_manager.py`
 
 ### `backend/core/agent_base.py`
-- [ ] Abstract `AgentBase` class
-- [ ] Required methods: `get_capabilities()`, `run(task)`, `get_required_model_role()`
-- [ ] `ollama_client` and `memory_manager` integration
-- [ ] Pre-task `scan_errors()` loop
-- [ ] Post-task `update_skill_rate()` loop
-- [ ] `generate_training_sample(task, result)` → saves to `training_candidates.json`
-- [ ] `tests/backend/test_agent_base.py`
+- [x] Abstract `AgentBase` class
+- [x] Required methods: `get_capabilities()`, `run(task)`, `get_required_model_role()`
+- [x] `ollama_client` and `memory_manager` integration
+- [x] Pre-task `scan_errors()` loop
+- [x] Post-task `update_skill_rate()` loop
+- [x] `generate_training_sample(task, result)` → saves to `training_candidates.json`
+- [x] `tests/backend/test_agent_base.py`
 
 ### `backend/core/agent_registry.py`
-- [ ] Auto-scan `agents/` directory
-- [ ] Read each `config.json`, load `enabled: true` agents
-- [ ] Dynamically import `agent.py`
-- [ ] `find_by_capability(capability)`
-- [ ] `find_by_input_type(file_type)`
-- [ ] `list_all()` → all active agents
-- [ ] `tests/backend/test_agent_registry.py`
+- [x] Auto-scan `agents/` directory
+- [x] Read each `config.json`, load `enabled: true` agents
+- [x] Dynamically import `agent.py`
+- [x] `find_by_capability(capability)`
+- [x] `find_by_input_type(file_type)`
+- [x] `list_all()` → all active agents
+- [x] `tests/backend/test_agent_registry.py`
 
 ### `backend/core/orchestrator.py`
-- [ ] `asyncio.Semaphore(max_concurrent)` concurrency control
-- [ ] Send task to DeepSeek → receive plan JSON
-- [ ] Resolve `depends_on` dependencies from plan
-- [ ] Run independent steps in parallel
-- [ ] Run dependent steps sequentially
-- [ ] Collect results → send to DeepSeek for final report
-- [ ] `tests/backend/test_orchestrator.py`
+- [x] `asyncio.Semaphore(max_concurrent)` concurrency control
+- [x] Send task to DeepSeek → receive plan JSON
+- [x] Resolve `depends_on` dependencies from plan
+- [x] Run independent steps in parallel
+- [x] Run dependent steps sequentially
+- [x] Collect results → send to DeepSeek for final report
+- [x] `tests/backend/test_orchestrator.py`
 
 ---
 
