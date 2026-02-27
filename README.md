@@ -274,8 +274,8 @@ See [TODO.md](TODO.md) for the full task list.
 
 | Phase | Content | Status |
 |-------|---------|--------|
-| 0 | Monorepo setup, Docker, GitHub Actions | 🔄 |
-| 1 | Core layers (platform_utils → orchestrator) | ⏳ |
+| 0 | Monorepo setup, Docker, GitHub Actions | done |
+| 1 | Core layers (platform_utils → orchestrator) | done |
 | 2 | RAG Agent + ChromaDB integration | ⏳ |
 | 3 | Adaptive Memory integration | ⏳ |
 | 4 | CLI + setup wizard | ⏳ |
@@ -286,5 +286,26 @@ See [TODO.md](TODO.md) for the full task list.
 | 9 | Continual learning loop | ⏳ |
 
 ---
+
+## Shortcuts
+
+```bash
+## Before every commit
+
+# 1. Format code
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test black backend/ agents/
+
+# 2. Check linting
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/ agents/ --max-line-length=100
+
+# 3. Run tests
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
+
+# All three must pass before pushing.
+
+## example: run before commit your current file
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test black backend/core/model_registry.py
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/core/agent_base.py --max-line-length=100
+```
 
 > **"Your data stays with you."**
