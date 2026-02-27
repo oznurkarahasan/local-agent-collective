@@ -47,12 +47,8 @@ class Orchestrator:
         self.registry = AgentRegistry(agents_dir=agents_dir)
         self.semaphore = asyncio.Semaphore(max_concurrent)
 
-        config_dir = config_dir or (
-            Path(__file__).parent.parent.parent / "config"
-        )
-        self.model_registry = ModelRegistry(
-            config_path=config_dir / "models.json"
-        )
+        config_dir = config_dir or (Path(__file__).parent.parent.parent / "config")
+        self.model_registry = ModelRegistry(config_path=config_dir / "models.json")
 
     async def run(self, user_input: str) -> dict:
         """
@@ -92,9 +88,7 @@ class Orchestrator:
         Returns:
             Plan dict with 'steps' list.
         """
-        orchestration_model = self.model_registry.get_model_by_role(
-            "orchestration"
-        )
+        orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
 
         available_agents = self.registry.list_all()
@@ -179,9 +173,7 @@ class Orchestrator:
             if not ready:
                 break
 
-            tasks = [
-                self._execute_step(step, completed) for step in ready
-            ]
+            tasks = [self._execute_step(step, completed) for step in ready]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for step, result in zip(ready, results):
@@ -231,13 +223,9 @@ class Orchestrator:
             result["step_id"] = step["id"]
             return result
 
-    async def _report(
-        self, user_input: str, plan: dict, results: list[dict]
-    ) -> str:
+    async def _report(self, user_input: str, plan: dict, results: list[dict]) -> str:
         """Synthesize all results into a final report via DeepSeek."""
-        orchestration_model = self.model_registry.get_model_by_role(
-            "orchestration"
-        )
+        orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
 
         results_summary = json.dumps(results, indent=2, ensure_ascii=False)
