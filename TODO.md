@@ -125,17 +125,17 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 > Goal: First real agent — load and query documents.
 > Branch: `feature/rag-agent`
 
-- [ ] `agents/rag_agent/config.json`
-- [ ] `agents/rag_agent/memory/skills.json` initial values
-- [ ] `agents/rag_agent/memory/errors.json` initial values
-- [ ] `load_document(path)` → PDF, TXT, DOCX (LangChain)
-- [ ] `chunk_document(doc)`
-- [ ] `embed_chunks(chunks)` → via `nomic-embed-text`
-- [ ] `store_to_chroma(embeddings, chunks)`
-- [ ] `query(question)` → embed question, search ChromaDB
-- [ ] `generate_answer(question, context)` → via `qwen3:4b`
-- [ ] `AgentBase.run(task)` implementation
-- [ ] `tests/agents/test_rag_agent.py`
+- [x] `agents/rag_agent/config.json`
+- [x] `agents/rag_agent/memory/skills.json` initial values
+- [x] `agents/rag_agent/memory/errors.json` initial values
+- [x] `load_document(path)` → PDF, TXT, DOCX (LangChain)
+- [x] `chunk_document(doc)`
+- [x] `embed_chunks(chunks)` → via `nomic-embed-text`
+- [x] `store_to_chroma(embeddings, chunks)`
+- [x] `query(question)` → embed question, search ChromaDB
+- [x] `generate_answer(question, context)` → via `qwen3:4b`
+- [x] `AgentBase.run(task)` implementation
+- [x] `tests/agents/test_rag_agent.py`
 
 ---
 
@@ -143,10 +143,10 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 
 > Branch: `feature/adaptive-memory`
 
-- [ ] Connect error loop to RAG Agent
-- [ ] Connect skill loop to RAG Agent
-- [ ] Show memory stats in CLI
-- [ ] Integration tests
+- [x] Connect error loop to RAG Agent
+- [x] Connect skill loop to RAG Agent
+- [x] Show memory stats in CLI
+- [x] Integration tests
 
 ---
 
