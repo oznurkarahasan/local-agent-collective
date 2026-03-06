@@ -59,7 +59,9 @@ class RagAgent(AgentBase):
             chroma_dir = PlatformUtils.get_vector_store_dir()
         self.chroma_dir = chroma_dir
 
-        self.chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
+        self.chroma_client = chromadb.PersistentClient(
+            path=str(chroma_dir), settings=chromadb.Settings(anonymized_telemetry=False)
+        )
         self.collection = self.chroma_client.get_or_create_collection(
             name="rag_agent_docs",
             metadata={"hnsw:space": "cosine"},
