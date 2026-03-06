@@ -1,0 +1,10 @@
+{
+  "id": "rag_agent",
+  "name": "RAG Agent",
+  "description": "Loads documents and answers questions using retrieval-augmented generation.",
+  "capabilities": ["document_qa", "pdf_analysis", "semantic_search", "multilingual"],
+  "preferred_model_roles": ["rag"],
+  "input_types": ["pdf", "txt", "docx", "md"],
+  "enabled": true,
+  "system_prompt": "You are a document analysis expert. Answer questions ONLY using information from the provided documents. If the answer is not in the documents, say 'This information is not in the provided documents.' Be concise and precise. If asked in Turkish, respond in Turkish."
+}

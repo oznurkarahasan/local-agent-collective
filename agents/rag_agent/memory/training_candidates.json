@@ -1,0 +1,44 @@
+{
+  "candidates": [
+    {
+      "id": "train_cdd3a280",
+      "instruction": "load_document",
+      "input": "\"/tmp/test_doc.txt\"",
+      "output": "{\"file\": \"/tmp/test_doc.txt\", \"chunks_stored\": 1}",
+      "agent_id": "rag_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-06T12:18:14.842669+00:00"
+    },
+    {
+      "id": "train_83f94074",
+      "instruction": "query",
+      "input": "\"What is Indis.ai?\"",
+      "output": "{\"answer\": \"Indis.ai is a fully local, privacy-first AI agent system.\", \"sources\": [\"/tmp/test_doc.txt\"], \"chunks_used\": 1}",
+      "agent_id": "rag_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-06T12:18:40.464678+00:00"
+    },
+    {
+      "id": "train_518cf368",
+      "instruction": "load_document",
+      "input": "\"/tmp/test_doc.txt\"",
+      "output": "{\"file\": \"/tmp/test_doc.txt\", \"chunks_stored\": 1}",
+      "agent_id": "rag_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-06T12:22:04.588474+00:00"
+    },
+    {
+      "id": "train_8d484c6e",
+      "instruction": "query",
+      "input": "\"Indis.ai nedir?\"",
+      "output": "{\"answer\": \"Indis.ai, tamamen yerel ve gizlilik öncelikli bir AI agent sistemidir.\", \"sources\": [\"/tmp/test_doc.txt\"], \"chunks_used\": 1}",
+      "agent_id": "rag_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-06T12:22:33.825769+00:00"
+    }
+  ]
+}
