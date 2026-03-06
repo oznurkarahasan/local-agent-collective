@@ -1,0 +1,278 @@
+"""
+cli.py
+
+Command-line interface for the Local AI Agent Collective.
+Provides document loading, querying, and system status commands.
+"""
+
+import asyncio
+import sys
+from pathlib import Path
+
+# Add project root to path before local imports
+sys.path.insert(0, str(Path(__file__).parent.parent))  # noqa: E402
+
+from backend.core.platform_utils import PlatformUtils  # noqa: E402
+from backend.core.ollama_client import OllamaClient  # noqa: E402
+from agents.rag_agent.agent import RagAgent  # noqa: E402
+
+
+WELCOME = """
+╔══════════════════════════════════════════════════════╗
+║           Indis.ai — Independent Intelligence        ║
+║              Local AI Agent Collective               ║
+╚══════════════════════════════════════════════════════╝
+
+Commands:
+  load <file>     Load a document (PDF, TXT, DOCX, MD)
+  ask <question>  Ask a question about loaded documents
+  list docs       Show loaded documents
+  status          Show system status
+  memory stats    Show agent memory statistics
+  help            Show this help message
+  exit            Exit the program
+"""
+
+HELP = """
+Commands:
+  load <file>     Load a document (PDF, TXT, DOCX, MD)
+  ask <question>  Ask a question about loaded documents
+  list docs       Show loaded documents
+  status          Show system status
+  memory stats    Show agent memory statistics
+  help            Show this help message
+  exit            Exit the program
+"""
+
+
+class CLI:
+    """Interactive CLI for the Local AI Agent Collective."""
+
+    def __init__(self):
+        self.ollama = OllamaClient()
+        self.rag_agent = None
+        self.loaded_docs: list[str] = []
+
+    async def start(self):
+        """Start the CLI."""
+        print(WELCOME)
+        await self._check_system()
+        await self._init_agents()
+        await self._loop()
+
+    async def _check_system(self):
+        """Check system status on startup."""
+        print("Checking system...")
+
+        # Check Ollama
+        ollama_ok = await self.ollama.ping()
+        if ollama_ok:
+            print("  ✓ Ollama is running")
+        else:
+            print("  ✗ Ollama is not running")
+            print(f"  → {PlatformUtils.get_ollama_install_instructions()}")
+            print("\nPlease start Ollama and try again.")
+            sys.exit(1)
+
+        # Check models
+        models = await self.ollama.list_models()
+        model_ids = {m.get("name", "") for m in models}
+
+        required = ["nomic-embed-text:v1.5", "qwen3:4b"]
+        for model in required:
+            if model in model_ids:
+                print(f"  ✓ {model}")
+            else:
+                print(f"  ✗ {model} not found")
+                print(f"  → Run: ollama pull {model}")
+
+        print()
+
+    async def _init_agents(self):
+        """Initialize agents."""
+        memory_dir = Path(__file__).parent.parent / "agents" / "rag_agent" / "memory"
+        chroma_dir = PlatformUtils.get_vector_store_dir()
+
+        self.rag_agent = RagAgent(
+            memory_dir=memory_dir,
+            ollama_client=self.ollama,
+            chroma_dir=chroma_dir,
+        )
+        print("  ✓ RAG Agent ready")
+        print()
+
+    async def _loop(self):
+        """Main command loop."""
+        while True:
+            try:
+                user_input = input("indis> ").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\nGoodbye!")
+                break
+
+            if not user_input:
+                continue
+
+            await self._handle_command(user_input)
+
+    async def _handle_command(self, user_input: str):
+        """Route command to appropriate handler."""
+        parts = user_input.split(maxsplit=1)
+        command = parts[0].lower()
+        args = parts[1] if len(parts) > 1 else ""
+
+        if command == "exit" or command == "quit":
+            print("Goodbye!")
+            sys.exit(0)
+
+        elif command == "help":
+            print(HELP)
+
+        elif command == "load":
+            await self._cmd_load(args)
+
+        elif command == "ask":
+            await self._cmd_ask(args)
+
+        elif command == "list":
+            if args.strip() == "docs":
+                self._cmd_list_docs()
+            else:
+                print("Unknown command. Did you mean 'list docs'?")
+
+        elif command == "status":
+            await self._cmd_status()
+
+        elif command == "memory":
+            if args.strip() == "stats":
+                self._cmd_memory_stats()
+            else:
+                print("Unknown command. Did you mean 'memory stats'?")
+
+        else:
+            print(f"Unknown command: '{command}'. Type 'help' for commands.")
+
+    async def _cmd_load(self, file_path: str):
+        """Load a document into the RAG agent."""
+        if not file_path:
+            print("Usage: load <file_path>")
+            return
+
+        path = Path(file_path)
+        if not path.exists():
+            print(f"File not found: {file_path}")
+            return
+
+        print(f"Loading {path.name}...")
+
+        result = await self.rag_agent.run(
+            {
+                "type": "load_document",
+                "input": str(path.absolute()),
+            }
+        )
+
+        if result["success"]:
+            chunks = result["output"]["chunks_stored"]
+            print(f"  ✓ Loaded {path.name} ({chunks} chunks stored)")
+            if str(path.absolute()) not in self.loaded_docs:
+                self.loaded_docs.append(str(path.absolute()))
+        else:
+            print(f"  ✗ Failed to load: {result.get('error')}")
+
+    async def _cmd_ask(self, question: str):
+        """Ask a question about loaded documents."""
+        if not question:
+            print("Usage: ask <question>")
+            return
+
+        if not self.loaded_docs:
+            print("No documents loaded. Use 'load <file>' first.")
+            return
+
+        print("Thinking...")
+
+        result = await self.rag_agent.run(
+            {
+                "type": "query",
+                "input": question,
+            }
+        )
+
+        if result["success"]:
+            output = result["output"]
+            if isinstance(output, dict):
+                print(f"\n{output['answer']}\n")
+                sources = output.get("sources", [])
+                if sources:
+                    print(f"Sources: {', '.join(Path(s).name for s in sources)}")
+                print(f"Chunks used: {output.get('chunks_used', 0)}\n")
+            else:
+                print(f"\n{output}\n")
+        else:
+            print(f"  ✗ Query failed: {result.get('error')}")
+
+    def _cmd_list_docs(self):
+        """List loaded documents."""
+        if not self.loaded_docs:
+            print("No documents loaded.")
+            return
+
+        print(f"\nLoaded documents ({len(self.loaded_docs)}):")
+        for doc in self.loaded_docs:
+            print(f"  • {Path(doc).name} ({doc})")
+        print()
+
+    async def _cmd_status(self):
+        """Show system status."""
+        print("\nSystem Status:")
+
+        ollama_ok = await self.ollama.ping()
+        print(f"  Ollama:    {'✓ running' if ollama_ok else '✗ not running'}")
+        print(f"  Platform:  {PlatformUtils.OS}")
+        print(f"  Data dir:  {PlatformUtils.get_base_dir()}")
+        print(f"  Vector DB: {PlatformUtils.get_vector_store_dir()}")
+
+        if ollama_ok:
+            models = await self.ollama.list_models()
+            print(f"  Models:    {len(models)} installed")
+
+        agent_info = self.rag_agent.get_agent_info()
+        print(f"  RAG Agent: ✓ ready ({len(agent_info['skills'])} skills)")
+        print()
+
+    def _cmd_memory_stats(self):
+        """Show agent memory statistics."""
+        print("\nRAG Agent Memory Stats:")
+
+        skills = self.rag_agent.memory.get_skills()
+        errors = self.rag_agent.memory.get_errors()
+
+        print(f"\n  Skills ({len(skills)}):")
+        for skill in skills:
+            rate = skill.get("success_rate", 0)
+            runs = skill.get("total_runs", 0)
+            bar = "█" * int(rate * 10) + "░" * (10 - int(rate * 10))
+            print(f"    {skill['name']:<20} [{bar}] {rate:.0%} ({runs} runs)")
+
+        print(f"\n  Errors ({len(errors)}):")
+        resolved = sum(1 for e in errors if e.get("resolved"))
+        print(f"    Total: {len(errors)}, Resolved: {resolved}")
+
+        if errors:
+            print("\n  Recent errors:")
+            for e in errors[-3:]:
+                status = "✓" if e.get("resolved") else "✗"
+                print(f"    {status} {e['error_type']}: {e['context'][:50]}...")
+
+        print()
+
+
+def main():
+    """Entry point."""
+    cli = CLI()
+    asyncio.run(cli.start())
+
+
+if __name__ == "__main__":
+    main()

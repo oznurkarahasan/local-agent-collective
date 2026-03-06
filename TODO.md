@@ -154,13 +154,13 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 
 > Branch: `feature/cli`
 
-- [ ] Welcome screen and system status summary
-- [ ] `load <file>` → load document
-- [ ] `ask <question>` → query
-- [ ] `list docs` → loaded documents
-- [ ] `status` → active agents and models
-- [ ] `memory stats` → skill and error statistics
-- [ ] `exit`
+- [x] Welcome screen and system status summary
+- [x] `load <file>` → load document
+- [x] `ask <question>` → query
+- [x] `list docs` → loaded documents
+- [x] `status` → active agents and models
+- [x] `memory stats` → skill and error statistics
+- [x] `exit`
 
 ---
 
