@@ -205,6 +205,9 @@ pytest tests/backend/ -v
 
 # Agents only
 pytest tests/agents/ -v
+
+# tests
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
 ```
 
 ---
@@ -276,10 +279,10 @@ See [TODO.md](TODO.md) for the full task list.
 |-------|---------|--------|
 | 0 | Monorepo setup, Docker, GitHub Actions | done |
 | 1 | Core layers (platform_utils → orchestrator) | done |
-| 2 | RAG Agent + ChromaDB integration | ⏳ |
-| 3 | Adaptive Memory integration | ⏳ |
-| 4 | CLI + setup wizard | ⏳ |
-| 5 | Coder Agent | ⏳ |
+| 2 | RAG Agent + ChromaDB integration | done |
+| 3 | Adaptive Memory integration | done |
+| 4 | CLI + setup wizard | done |
+| 5 | Coder Agent | done |
 | 6 | Web UI (FastAPI + frontend) | ⏳ |
 | 7 | QLoRA fine-tuning (personalized orchestrator) | ⏳ |
 | 8 | Agent training data generation | ⏳ |
