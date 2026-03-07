@@ -1,7 +1,5 @@
 name: CI Frontend
 
-# Placeholder — will be activated in Phase 6 (Web UI)
-
 on:
   push:
     paths:
@@ -11,8 +9,26 @@ on:
       - 'frontend/**'
 
 jobs:
-  placeholder:
+  lint-and-test:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Frontend CI not yet configured
-        run: echo "Frontend CI will be configured in Phase 6"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: flake8 frontend/ --max-line-length=100
+
+      - name: Check formatting with black
+        run: black --check frontend/
+
+      - name: Run API tests
+        run: pytest tests/e2e/test_api.py -v

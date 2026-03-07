@@ -46,8 +46,8 @@
       "name": "query",
       "description": "Auto-registered skill for task type: query",
       "success_rate": 1.0,
-      "total_runs": 2,
-      "last_used": "2026-03-07T12:18:35.949900+00:00"
+      "total_runs": 6,
+      "last_used": "2026-03-07T15:43:50.721233+00:00"
     }
   ]
 }

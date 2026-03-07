@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indis.ai — Independent Intelligence</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e8;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #2a2a35;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #a78bfa;
+    }
+
+    header span {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    #status-bar {
+      display: flex;
+      gap: 16px;
+      margin-left: auto;
+      font-size: 0.78rem;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    .dot-green { background: #22c55e; }
+    .dot-red   { background: #ef4444; }
+    .dot-gray  { background: #666; }
+
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 280px;
+      border-right: 1px solid #2a2a35;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    aside h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #666;
+    }
+
+    #upload-area {
+      border: 2px dashed #3a3a4a;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    #upload-area:hover { border-color: #a78bfa; color: #a78bfa; }
+    #upload-area input { display: none; }
+
+    #file-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .file-item {
+      background: #1a1a24;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .badge-code { background: #1e3a5f; color: #60a5fa; }
+    .badge-doc  { background: #1e3d2f; color: #4ade80; }
+
+    /* Chat area */
+    #chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg {
+      max-width: 720px;
+      line-height: 1.6;
+    }
+
+    .msg-user {
+      align-self: flex-end;
+      background: #2d1f6e;
+      border-radius: 12px 12px 2px 12px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+    }
+
+    .msg-assistant {
+      align-self: flex-start;
+      background: #1a1a24;
+      border-radius: 2px 12px 12px 12px;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+    }
+
+    .msg-assistant .answer-block { margin-bottom: 10px; }
+
+    .msg-assistant .source-line {
+      font-size: 0.76rem;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .msg-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+      color: #a78bfa;
+    }
+
+    .msg-section-label {
+      font-size: 0.72rem;
+      color: #60a5fa;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .thinking {
+      color: #666;
+      font-style: italic;
+      font-size: 0.85rem;
+      align-self: flex-start;
+    }
+
+    #input-row {
+      padding: 16px 24px;
+      border-top: 1px solid #2a2a35;
+      display: flex;
+      gap: 10px;
+    }
+
+    #question-input {
+      flex: 1;
+      background: #1a1a24;
+      border: 1px solid #2a2a35;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #e2e2e8;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #question-input:focus { border-color: #a78bfa; }
+
+    #send-btn {
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    #send-btn:hover { background: #6d28d9; }
+    #send-btn:disabled { background: #3a2a5a; cursor: not-allowed; }
+
+    #upload-status {
+      font-size: 0.8rem;
+      min-height: 20px;
+      color: #22c55e;
+    }
+
+    .welcome {
+      align-self: center;
+      text-align: center;
+      color: #444;
+      margin-top: 60px;
+    }
+
+    .welcome h2 { font-size: 1.4rem; color: #666; margin-bottom: 8px; }
+    .welcome p  { font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Indis.ai</h1>
+  <span>Independent Intelligence</span>
+  <div id="status-bar">
+    <span id="ollama-status"><span class="status-dot dot-gray"></span>Ollama</span>
+    <span id="rag-status"><span class="status-dot dot-gray"></span>RAG</span>
+    <span id="coder-status"><span class="status-dot dot-gray"></span>Coder</span>
+  </div>
+</header>
+
+<main>
+  <aside>
+    <h2>Files</h2>
+
+    <div id="upload-area" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".pdf,.txt,.md,.docx,.py,.js,.ts,.go,.rs,.cpp,.c,.java" />
+      <div>⬆ Upload file</div>
+      <div style="font-size:0.75rem;margin-top:4px">PDF, TXT, MD, DOCX, PY, JS...</div>
+    </div>
+
+    <div id="upload-status"></div>
+    <div id="file-list"></div>
+  </aside>
+
+  <div id="chat-area">
+    <div id="messages">
+      <div class="welcome">
+        <h2>Welcome to Indis.ai</h2>
+        <p>Upload a document or code file, then ask questions about it.</p>
+      </div>
+    </div>
+
+    <div id="input-row">
+      <input
+        type="text"
+        id="question-input"
+        placeholder="Ask a question about your files..."
+        autocomplete="off"
+      />
+      <button id="send-btn" onclick="sendQuestion()">Ask</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = '';
+
+  // --- Status ---
+  async function loadStatus() {
+    try {
+      const res = await fetch(`${API}/status`);
+      const data = await res.json();
+
+      setStatus('ollama-status', 'Ollama', data.ollama);
+      setStatus('rag-status', 'RAG', data.agents?.rag_agent?.ready);
+      setStatus('coder-status', 'Coder', data.agents?.coder_agent?.ready);
+    } catch {
+      setStatus('ollama-status', 'Ollama', false);
+    }
+  }
+
+  function setStatus(id, label, ok) {
+    const el = document.getElementById(id);
+    const cls = ok ? 'dot-green' : 'dot-red';
+    el.innerHTML = `<span class="status-dot ${cls}"></span>${label}`;
+  }
+
+  // --- File Upload ---
+  document.getElementById('file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('upload-status');
+    statusEl.style.color = '#a78bfa';
+    statusEl.textContent = `Uploading ${file.name}...`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API}/documents/load`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        statusEl.style.color = '#22c55e';
+        statusEl.textContent = `✓ ${file.name} loaded (${data.chunks_stored} chunks)`;
+        addFileToList(data);
+        loadStatus();
+      } else {
+        statusEl.style.color = '#ef4444';
+        statusEl.textContent = `✗ ${data.detail}`;
+      }
+    } catch (err) {
+      statusEl.style.color = '#ef4444';
+      statusEl.textContent = `✗ Upload failed`;
+    }
+
+    e.target.value = '';
+  });
+
+  function addFileToList(data) {
+    const list = document.getElementById('file-list');
+    const isCode = data.agent === 'coder_agent';
+    const badge = isCode
+      ? `<span class="file-badge badge-code">${data.language || 'code'}</span>`
+      : `<span class="file-badge badge-doc">doc</span>`;
+
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `${badge} ${data.filename}`;
+    list.appendChild(item);
+  }
+
+  async function loadFileList() {
+    try {
+      const res = await fetch(`${API}/documents`);
+      const data = await res.json();
+      data.files.forEach(addFileToList);
+    } catch {}
+  }
+
+  // --- Query ---
+  async function sendQuestion() {
+    const input = document.getElementById('question-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    input.value = '';
+    addMessage('user', question);
+
+    const thinking = addMessage('thinking', 'Thinking...');
+    document.getElementById('send-btn').disabled = true;
+
+    try {
+      const res = await fetch(`${API}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, target: 'auto' }),
+      });
+      const data = await res.json();
+      thinking.remove();
+      renderAnswer(data);
+    } catch (err) {
+      thinking.remove();
+      addMessage('assistant', 'Error: could not reach the server.');
+    }
+
+    document.getElementById('send-btn').disabled = false;
+  }
+
+  function renderAnswer(data) {
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg msg-assistant';
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = 'Indis.ai';
+    div.appendChild(label);
+
+    const results = data.results || {};
+
+    if (Object.keys(results).length === 0) {
+      const p = document.createElement('p');
+      p.textContent = data.message || 'No relevant content found.';
+      div.appendChild(p);
+    } else {
+      for (const [key, val] of Object.entries(results)) {
+        if (Object.keys(results).length > 1) {
+          const lbl = document.createElement('div');
+          lbl.className = 'msg-section-label';
+          lbl.textContent = key === 'code' ? '⌨ Code' : '📄 Documents';
+          div.appendChild(lbl);
+        }
+
+        const block = document.createElement('div');
+        block.className = 'answer-block';
+        block.style.whiteSpace = 'pre-wrap';
+        block.textContent = val.answer;
+        div.appendChild(block);
+
+        if (val.sources?.length) {
+          const src = document.createElement('div');
+          src.className = 'source-line';
+          src.textContent = 'Sources: ' + val.sources.map(s => s.split('/').pop()).join(', ');
+          div.appendChild(src);
+        }
+      }
+    }
+
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function addMessage(type, text) {
+    const messages = document.getElementById('messages');
+
+    // Remove welcome message
+    const welcome = messages.querySelector('.welcome');
+    if (welcome) welcome.remove();
+
+    const div = document.createElement('div');
+
+    if (type === 'user') {
+      div.className = 'msg msg-user';
+      div.textContent = text;
+    } else if (type === 'thinking') {
+      div.className = 'thinking';
+      div.textContent = text;
+    } else {
+      div.className = 'msg msg-assistant';
+      div.textContent = text;
+    }
+
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  // Enter key
+  document.getElementById('question-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendQuestion();
+    }
+  });
+
+  // Init
+  loadStatus();
+  loadFileList();
+</script>
+</body>
+</html>

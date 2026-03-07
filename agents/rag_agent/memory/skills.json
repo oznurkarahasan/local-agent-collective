@@ -5,9 +5,9 @@
       "id": "sk_001",
       "name": "load_document",
       "description": "Loads PDF, TXT, DOCX files and prepares them for processing",
-      "success_rate": 0.5,
-      "total_runs": 4,
-      "last_used": "2026-03-07T12:09:18.394883+00:00"
+      "success_rate": 0.6,
+      "total_runs": 5,
+      "last_used": "2026-03-07T15:42:06.722220+00:00"
     },
     {
       "id": "sk_002",
@@ -46,8 +46,8 @@
       "name": "query",
       "description": "Auto-registered skill for task type: query",
       "success_rate": 1.0,
-      "total_runs": 2,
-      "last_used": "2026-03-06T12:22:33.825500+00:00"
+      "total_runs": 6,
+      "last_used": "2026-03-07T15:43:47.645291+00:00"
     }
   ]
 }
