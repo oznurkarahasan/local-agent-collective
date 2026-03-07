@@ -181,11 +181,11 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 
 > Branch: `feature/web-ui`
 
-- [ ] FastAPI backend (`frontend/api/`)
-- [ ] REST endpoints (load doc, query, agent status)
-- [ ] Minimal HTML/CSS/JS interface
-- [ ] Add frontend service to Docker Compose
-- [ ] Activate `ci-frontend.yml` pipeline
+- [x] FastAPI backend (`frontend/api/`)
+- [x] REST endpoints (load doc, query, agent status)
+- [x] Minimal HTML/CSS/JS interface
+- [x] Add frontend service to Docker Compose
+- [x] Activate `ci-frontend.yml` pipeline
 
 ---
 
