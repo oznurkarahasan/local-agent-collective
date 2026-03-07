@@ -168,12 +168,12 @@ When a task is completed, change `[ ]` to `[x]` and add the related PR number.
 
 > Branch: `feature/coder-agent`
 
-- [ ] `agents/coder_agent/config.json`
-- [ ] Code file reading and chunking (line + function based)
-- [ ] Code embedding + ChromaDB integration
-- [ ] Query via `qwen2.5-coder:3b`
-- [ ] `AgentBase.run(task)` implementation
-- [ ] Tests
+- [x] `agents/coder_agent/config.json`
+- [x] Code file reading and chunking (line + function based)
+- [x] Code embedding + ChromaDB integration
+- [x] Query via `qwen2.5-coder:3b`
+- [x] `AgentBase.run(task)` implementation
+- [x] Tests
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "agent_id": "rag_agent",
+  "agent_id": "rag_agent_v1",
   "errors": [
     {
       "id": "err_001",
@@ -37,7 +37,7 @@
       "id": "err_005",
       "error_type": "Exception",
       "context": "store_to_chroma chromadb upsert embedding dimension mismatch",
-      "solution": "Ensure all embeddings use the same model. Do not mix nomic-embed-text versions.",
+      "solution": "Ensure nomic-embed-text:v1.5 is used consistently for both storing and querying.",
       "timestamp": "2025-01-15T10:20:00+00:00",
       "resolved": true
     }

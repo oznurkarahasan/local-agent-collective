@@ -1,0 +1,34 @@
+{
+  "candidates": [
+    {
+      "id": "train_58aeb6e8",
+      "instruction": "load_code",
+      "input": "\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"",
+      "output": "{\"file\": \"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\", \"language\": \"python\", \"chunks_stored\": 27}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:15:44.324627+00:00"
+    },
+    {
+      "id": "train_8680c9ad",
+      "instruction": "query",
+      "input": "\"What does the CoderAgent class do?\"",
+      "output": "{\"answer\": \"The `CoderAgent` class in the provided code is an agent designed to load and process code files. Its primary tasks are:\\n\\n1. **Load Code**: It loads a code file (supported formats include `.py`) into ChromaDB for embedding.\\n2. **Query**: It answers questions about the stored code using vector embeddings and document retrieval.\\n\\nThis class supports two types of tasks:\\n- `load_code`: Requires specifying the path to a code file to be loaded.\\n- `query`: Accepts a string question to which it provides an answer based on the embedded code content in ChromaDB.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:16:12.646945+00:00"
+    },
+    {
+      "id": "train_29090c23",
+      "instruction": "query",
+      "input": "\"CoderAgent sınıfı ne işe yarar?\"",
+      "output": "{\"answer\": \"CoderAgent sınıfı, kullanıcıdan gelen kod sorularını cevaplayabilen bir yazılım aracıdır. Özellikle ChromaDB veri tabanını kullanarak kod dosyalarını yükler ve bucağındaki soruları onları anlamalıdır.\\n\\n1. Kod Dosyasını Yüklemek:\\n   - `load_code` görevi, belirtilen dosyanın yüklenmesini, okunmasını ve ChromaDB veritabanına kaydedmesini sağlar.\\n   - Dosya yoksa hata fırlatır.\\n\\n2. Soruları Çevaplamak:\\n   - `query` görevi, bu sınıfın bir metodu olarak tanımlanmıştır.\\n   - Veritabanında belirtilen soruyla eşleşen kod parçalarını bulur ve yanıtlar oluşturur.\\n\\n3. Desteklenen Görevler:\\n   - Dosya yükleme (`load_code`)\\n   - Soru sorma (`query`)\\n\\nBucağındaki diğer görevleri açıklamak için aşağıdaki örneği kullanabiliriz:\\n\\n```python\\n# --- Code Loading ---\\n\\n    async def _handle_load_code(self, file_path: str) -> dict:\\n        \\\"\\\"\\\"Load a code file and store its embeddings in ChromaDB.\\\"\\\"\\\"\\n        path = Path(file_path)\\n\\n        if not path.exists():\\n            raise FileNotFoundError(f\\\"File not found: {file_path}\\\")\\n\\n        # Load code\\n        code_text = self.load_code(path)\\n\\n        # Chunk code\\n        chunks = self.chunk_code(code_text, path.suffix)\\n```\\n\\nBucağındaki bu fonksiyon, kod dosyasını okur ve sonra(chunklar) ChromaDB veritabanına ekler.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:18:35.950518+00:00"
+    }
+  ]
+}
