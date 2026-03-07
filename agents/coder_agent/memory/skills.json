@@ -1,0 +1,53 @@
+{
+  "agent_id": "coder_agent",
+  "skills": [
+    {
+      "id": "sk_001",
+      "name": "load_code",
+      "description": "Loads code files and prepares them for processing",
+      "success_rate": 1.0,
+      "total_runs": 1,
+      "last_used": "2026-03-07T12:15:44.324064+00:00"
+    },
+    {
+      "id": "sk_002",
+      "name": "chunk_code",
+      "description": "Splits code into function/class based chunks for embedding",
+      "success_rate": 1.0,
+      "total_runs": 0,
+      "last_used": null
+    },
+    {
+      "id": "sk_003",
+      "name": "embed_code",
+      "description": "Converts code chunks to vectors via nomic-embed-text",
+      "success_rate": 1.0,
+      "total_runs": 0,
+      "last_used": null
+    },
+    {
+      "id": "sk_004",
+      "name": "code_search",
+      "description": "Embeds query and retrieves top-k matching code chunks from ChromaDB",
+      "success_rate": 1.0,
+      "total_runs": 0,
+      "last_used": null
+    },
+    {
+      "id": "sk_005",
+      "name": "code_explanation",
+      "description": "Generates explanation from retrieved code context via qwen2.5-coder:3b",
+      "success_rate": 1.0,
+      "total_runs": 0,
+      "last_used": null
+    },
+    {
+      "id": "sk_628a47b4",
+      "name": "query",
+      "description": "Auto-registered skill for task type: query",
+      "success_rate": 1.0,
+      "total_runs": 6,
+      "last_used": "2026-03-07T15:43:50.721233+00:00"
+    }
+  ]
+}

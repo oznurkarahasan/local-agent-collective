@@ -1,0 +1,74 @@
+{
+  "candidates": [
+    {
+      "id": "train_58aeb6e8",
+      "instruction": "load_code",
+      "input": "\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"",
+      "output": "{\"file\": \"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\", \"language\": \"python\", \"chunks_stored\": 27}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:15:44.324627+00:00"
+    },
+    {
+      "id": "train_8680c9ad",
+      "instruction": "query",
+      "input": "\"What does the CoderAgent class do?\"",
+      "output": "{\"answer\": \"The `CoderAgent` class in the provided code is an agent designed to load and process code files. Its primary tasks are:\\n\\n1. **Load Code**: It loads a code file (supported formats include `.py`) into ChromaDB for embedding.\\n2. **Query**: It answers questions about the stored code using vector embeddings and document retrieval.\\n\\nThis class supports two types of tasks:\\n- `load_code`: Requires specifying the path to a code file to be loaded.\\n- `query`: Accepts a string question to which it provides an answer based on the embedded code content in ChromaDB.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:16:12.646945+00:00"
+    },
+    {
+      "id": "train_29090c23",
+      "instruction": "query",
+      "input": "\"CoderAgent sınıfı ne işe yarar?\"",
+      "output": "{\"answer\": \"CoderAgent sınıfı, kullanıcıdan gelen kod sorularını cevaplayabilen bir yazılım aracıdır. Özellikle ChromaDB veri tabanını kullanarak kod dosyalarını yükler ve bucağındaki soruları onları anlamalıdır.\\n\\n1. Kod Dosyasını Yüklemek:\\n   - `load_code` görevi, belirtilen dosyanın yüklenmesini, okunmasını ve ChromaDB veritabanına kaydedmesini sağlar.\\n   - Dosya yoksa hata fırlatır.\\n\\n2. Soruları Çevaplamak:\\n   - `query` görevi, bu sınıfın bir metodu olarak tanımlanmıştır.\\n   - Veritabanında belirtilen soruyla eşleşen kod parçalarını bulur ve yanıtlar oluşturur.\\n\\n3. Desteklenen Görevler:\\n   - Dosya yükleme (`load_code`)\\n   - Soru sorma (`query`)\\n\\nBucağındaki diğer görevleri açıklamak için aşağıdaki örneği kullanabiliriz:\\n\\n```python\\n# --- Code Loading ---\\n\\n    async def _handle_load_code(self, file_path: str) -> dict:\\n        \\\"\\\"\\\"Load a code file and store its embeddings in ChromaDB.\\\"\\\"\\\"\\n        path = Path(file_path)\\n\\n        if not path.exists():\\n            raise FileNotFoundError(f\\\"File not found: {file_path}\\\")\\n\\n        # Load code\\n        code_text = self.load_code(path)\\n\\n        # Chunk code\\n        chunks = self.chunk_code(code_text, path.suffix)\\n```\\n\\nBucağındaki bu fonksiyon, kod dosyasını okur ve sonra(chunklar) ChromaDB veritabanına ekler.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T12:18:35.950518+00:00"
+    },
+    {
+      "id": "train_ab8aedb8",
+      "instruction": "query",
+      "input": "\"hi\"",
+      "output": "{\"answer\": \"Merhaba! Size nasıl yardımcı olabilirim?\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T15:40:28.815885+00:00"
+    },
+    {
+      "id": "train_4c172ec8",
+      "instruction": "query",
+      "input": "\"merhaba bana c ile asal sayı bulma kodu yazar mısın\"",
+      "output": "{\"answer\": \"Evet, burada Python koda tabi tutarak bir C dilinde asal sayı bulma kodunu yazmışım. İşte bu:\\n\\n```c\\n#include <stdio.h>\\n#include <stdbool.h>\\n\\nbool isPrime(int num) {\\n    if (num <= 1) return false;\\n    for (int i = 2; i * i <= num; i++) {\\n        if (num % i == 0) return false;\\n    }\\n    return true;\\n}\\n\\nint main() {\\n    int number;\\n\\n    printf(\\\"Bir sayı giriniz: \\\");\\n    scanf(\\\"%d\\\", &number);\\n\\n    if (isPrime(number)) {\\n        printf(\\\"%d bir asal sayıdır.\\\\n\\\", number);\\n    } else {\\n        printf(\\\"%d bir asal sayı değildir.\\\\n\\\", number);\\n    }\\n\\n    return 0;\\n}\\n```\\n\\nBu kod, kullanıcıdan bir sayıyı alır ve bu sayı asalsayıdır mı belirler. Asal sayı, 1'e ve kendinden başka bir tam böleni olmayan bir pozitif tamsayıdır. Bu kod, C dilinde yazılmıştır ve basit bir ifadeden oluşur.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T15:41:02.376673+00:00"
+    },
+    {
+      "id": "train_5f70f2f1",
+      "instruction": "query",
+      "input": "\"selam bu pdf ne anlatıyor\"",
+      "output": "{\"answer\": \"Bu soru \\\"Selam bu PDF ne anlatıyor\\\" şeklinde bir sorguydu ve belki de bir makale veya raporun başlığıydı. Ancak sunulan kod contextinde belirli bilgiler olmadığını gördüm. Bu yüzden cevap olarak \\\"Bu soruda belirtilen kod contexti genellikle bir belge veya raporu içeren bir sorguyu karşılamaz.\\\" şeklinde açıkladım.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T15:42:42.168777+00:00"
+    },
+    {
+      "id": "train_99c86c44",
+      "instruction": "query",
+      "input": "\"pdf hakkında onemli detayları soyle\"",
+      "output": "{\"answer\": \"Bu konuda bilgi veriyorum:\\n\\n1. PDF'in boyutu ve formatı:\\n   - Boyut: {Boyut} MB\\n   - Format: {Format}\\n\\n2. Anahtar noktalar:\\n   - {Anahtar Nokta 1}\\n   - {Anahtar Nokta 2}\\n   - {Anahtar Nokta 3}\\n\\n3. Temel bilgiler:\\n   - PDF'nin ana konusu: {Ana Konus}\\n   - Sistemi nasıl çalışır: {Çalışma Processi}\\n\\n4. Önemli detaylar:\\n   - {Önemli Detayı 1}\\n   - {Önemli Detayı 2}\\n   - {Önemli Detayı 3}\\n\\nBu veriler PDF'deki önemli bilgileri temsil eder, ancak gerçek verileri buraya yerleştirmeden, yukarıdaki boşluklar doldurulmalıdır.\", \"sources\": [\"/home/das-gaca/local-agent-collective/agents/coder_agent/agent.py\"], \"language\": \"python\", \"chunks_used\": 5}",
+      "agent_id": "coder_agent",
+      "quality_score": null,
+      "approved": false,
+      "timestamp": "2026-03-07T15:43:50.721522+00:00"
+    }
+  ]
+}

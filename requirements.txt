@@ -26,3 +26,8 @@ black==25.1.0
 # Dependency version pins (resolve warnings)
 urllib3==2.2.3
 charset-normalizer==3.4.0
+
+# Web UI
+fastapi==0.115.9
+uvicorn==0.34.0
+python-multipart==0.0.20

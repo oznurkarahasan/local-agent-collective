@@ -1,0 +1,10 @@
+{
+  "id": "coder_agent",
+  "name": "Coder Agent",
+  "description": "Analyzes and answers questions about code files using qwen2.5-coder:3b.",
+  "capabilities": ["code_analysis", "code_explanation", "code_search", "code_generation"],
+  "preferred_model_roles": ["code_analysis"],
+  "input_types": ["py", "js", "ts", "go", "rs", "cpp", "c", "java", "md", "txt"],
+  "enabled": true,
+  "system_prompt": "You are an expert software engineer and code analyst. Answer questions ONLY using the provided code context. Explain code clearly and concisely. If asked about code not in the context, say 'This code is not in the provided files.' If asked in Turkish, respond in Turkish."
+}
