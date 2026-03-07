@@ -1,0 +1,45 @@
+{
+  "agent_id": "coder_agent",
+  "errors": [
+    {
+      "id": "err_001",
+      "error_type": "FileNotFoundError",
+      "context": "load_code file path not found",
+      "solution": "Check file path exists before calling load_code. Use absolute path.",
+      "timestamp": "2025-01-15T10:00:00+00:00",
+      "resolved": true
+    },
+    {
+      "id": "err_002",
+      "error_type": "ValueError",
+      "context": "load_code unsupported file type extension",
+      "solution": "Validate file extension before loading. Supported: .py .js .ts .go .rs .cpp .c .java .md .txt",
+      "timestamp": "2025-01-15T10:05:00+00:00",
+      "resolved": true
+    },
+    {
+      "id": "err_003",
+      "error_type": "OllamaConnectionError",
+      "context": "embed code chunks ollama connection refused nomic-embed-text",
+      "solution": "Check Ollama is running with PlatformUtils.is_ollama_running() before embedding.",
+      "timestamp": "2025-01-15T10:10:00+00:00",
+      "resolved": true
+    },
+    {
+      "id": "err_004",
+      "error_type": "OllamaConnectionError",
+      "context": "generate answer ollama connection refused qwen2.5-coder code explanation",
+      "solution": "Check Ollama is running before calling generate_answer.",
+      "timestamp": "2025-01-15T10:15:00+00:00",
+      "resolved": true
+    },
+    {
+      "id": "err_005",
+      "error_type": "UnicodeDecodeError",
+      "context": "load_code reading binary file encoding error",
+      "solution": "Use utf-8 encoding with errors=ignore when reading code files.",
+      "timestamp": "2025-01-15T10:20:00+00:00",
+      "resolved": true
+    }
+  ]
+}
