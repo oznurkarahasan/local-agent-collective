@@ -283,10 +283,23 @@ See [TODO.md](TODO.md) for the full task list.
 | 3 | Adaptive Memory integration | done |
 | 4 | CLI + setup wizard | done |
 | 5 | Coder Agent | done |
-| 6 | Web UI (FastAPI + frontend) | ⏳ |
+| 6 | Web UI (FastAPI + frontend) | done |
 | 7 | QLoRA fine-tuning (personalized orchestrator) | ⏳ |
 | 8 | Agent training data generation | ⏳ |
 | 9 | Continual learning loop | ⏳ |
+
+---
+
+## WebUi 
+
+```bash
+source .venv/bin/activate
+PYTHONPATH=. uvicorn frontend.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test black frontend/api/
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 frontend/api/ --max-line-length=100
+sudo docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
+```
 
 ---
 
