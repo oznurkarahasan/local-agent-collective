@@ -53,3 +53,6 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+
+# Agent Memory (user-specific data)
+agents/*/memory/*.json
