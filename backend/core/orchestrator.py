@@ -131,6 +131,8 @@ class Orchestrator:
             "Create an execution plan."
         )
 
+        keep_alive = orchestration_model.get("keep_alive", "0")
+
         try:
             response = await self.ollama.chat(
                 model=model_id,
@@ -138,7 +140,7 @@ class Orchestrator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                keep_alive="0",
+                keep_alive=keep_alive,
             )
 
             json_start = response.find("{")
@@ -241,6 +243,8 @@ class Orchestrator:
             "Write a final report."
         )
 
+        keep_alive = orchestration_model.get("keep_alive", "0")
+
         try:
             report = await self.ollama.chat(
                 model=model_id,
@@ -248,7 +252,7 @@ class Orchestrator:
                     {"role": "system", "content": system_content},
                     {"role": "user", "content": user_content},
                 ],
-                keep_alive="0",
+                keep_alive=keep_alive,
             )
             return report
 

@@ -15,6 +15,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from backend.core.agent_base import AgentBase
 from backend.core.ollama_client import OllamaClient
 from backend.core.platform_utils import PlatformUtils
+from backend.core.model_registry import ModelRegistry, ModelNotFoundError
 
 
 # Supported file extensions
@@ -257,11 +258,8 @@ class CoderAgent(AgentBase):
             for i in range(len(chunks))
         ]
 
-        # Generate embeddings
-        embeddings = []
-        for chunk in chunks:
-            vector = await self.ollama.embed(model=self.embed_model, text=chunk)
-            embeddings.append(vector)
+        # Generate embeddings in batch
+        embeddings = await self.ollama.embed(model=self.embed_model, text=chunks)
 
         # Store in ChromaDB
         self.collection.upsert(
@@ -366,11 +364,17 @@ class CoderAgent(AgentBase):
             f"Code context:\n{context_text}\n\n" f"Question: {question}\n\n" "Answer:"
         )
 
+        try:
+            chat_model_config = ModelRegistry().get_model_by_id(self.chat_model)
+            keep_alive = chat_model_config.get("keep_alive", "0")
+        except ModelNotFoundError:
+            keep_alive = "0"
+
         return await self.ollama.chat(
             model=self.chat_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            keep_alive="0",
+            keep_alive=keep_alive,
         )

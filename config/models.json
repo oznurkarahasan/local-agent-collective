@@ -14,7 +14,7 @@
       "context_window": 32768,
       "languages": ["en", "tr", "zh"],
       "size_gb": 2.5,
-      "keep_alive": "0"
+      "keep_alive": "5m"
     },
     {
       "id": "qwen2.5-coder:3b",
@@ -22,7 +22,7 @@
       "context_window": 32768,
       "languages": ["code"],
       "size_gb": 1.9,
-      "keep_alive": "0"
+      "keep_alive": "5m"
     },
     {
       "id": "nomic-embed-text:v1.5",

@@ -91,12 +91,23 @@ async def test_chat_keep_alive_default(client):
 # --- embed ---
 
 @pytest.mark.asyncio
-async def test_embed_success(client):
+async def test_embed_success_single(client):
     mock_data = {"embeddings": [[0.1, 0.2, 0.3]]}
 
     with patch.object(client, "_request", new=AsyncMock(return_value=mock_data)):
         vector = await client.embed(model="nomic-embed-text:v1.5", text="hello")
         assert vector == [0.1, 0.2, 0.3]
+
+
+@pytest.mark.asyncio
+async def test_embed_success_batch(client):
+    mock_data = {"embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]}
+
+    with patch.object(client, "_request", new=AsyncMock(return_value=mock_data)):
+        vectors = await client.embed(model="nomic-embed-text:v1.5", text=["hello", "world"])
+        assert len(vectors) == 2
+        assert vectors[0] == [0.1, 0.2, 0.3]
+        assert vectors[1] == [0.4, 0.5, 0.6]
 
 
 @pytest.mark.asyncio

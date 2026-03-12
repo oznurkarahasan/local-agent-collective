@@ -134,16 +134,16 @@ class OllamaClient:
         response = await self._request("POST", "/api/chat", payload)
         return response.get("message", {}).get("content", "")
 
-    async def embed(self, model: str, text: str) -> list[float]:
+    async def embed(self, model: str, text: str | list[str]) -> list[float] | list[list[float]]:
         """
-        Generate embeddings for the given text.
+        Generate embeddings for the given text or list of texts.
 
         Args:
             model: Embedding model e.g. 'nomic-embed-text:v1.5'
-            text: Text to embed
+            text: Text to embed (string or list of strings)
 
         Returns:
-            Embedding vector as list of floats.
+            Embedding vector as list of floats, or list of list of floats if input was a list.
 
         Raises:
             OllamaConnectionError: If Ollama is unreachable.
@@ -154,7 +154,10 @@ class OllamaClient:
         embeddings = response.get("embeddings", [])
         if not embeddings:
             raise OllamaModelError(f"No embeddings returned for model {model}")
-        return embeddings[0]
+            
+        if isinstance(text, str):
+            return embeddings[0]
+        return embeddings
 
     async def unload_model(self, model: str) -> bool:
         """
