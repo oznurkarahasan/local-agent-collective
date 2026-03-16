@@ -27,6 +27,8 @@ def mock_rag_agent():
         "skills": [],
         "error_count": 0,
     }
+    agent.collection = MagicMock()
+    agent.collection.count.return_value = 1
     agent.memory = MagicMock()
     agent.memory.get_skills.return_value = []
     agent.memory.get_errors.return_value = []
@@ -52,6 +54,8 @@ def mock_coder_agent():
         "skills": [],
         "error_count": 0,
     }
+    agent.collection = MagicMock()
+    agent.collection.count.return_value = 1
     agent.memory = MagicMock()
     agent.memory.get_skills.return_value = []
     agent.memory.get_errors.return_value = []
