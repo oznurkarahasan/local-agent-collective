@@ -22,14 +22,22 @@ async def query(request: QueryRequest):
 
     results = {}
 
-    if request.target in ("auto", "documents", "both"):
-        rag = get_rag_agent()
+    rag = get_rag_agent()
+    coder = get_coder_agent()
+
+    run_rag = request.target in ("documents", "both") or (
+        request.target == "auto" and rag.collection.count() > 0
+    )
+    run_coder = request.target in ("code", "both") or (
+        request.target == "auto" and coder.collection.count() > 0
+    )
+
+    if run_rag:
         rag_result = await rag.run({"type": "query", "input": request.question})
         if rag_result["success"] and isinstance(rag_result["output"], dict):
             results["documents"] = rag_result["output"]
 
-    if request.target in ("auto", "code", "both"):
-        coder = get_coder_agent()
+    if run_coder:
         coder_result = await coder.run({"type": "query", "input": request.question})
         if coder_result["success"] and isinstance(coder_result["output"], dict):
             results["code"] = coder_result["output"]
