@@ -218,19 +218,24 @@ async def test_no_training_sample_on_failure(agent):
 
 def test_preloaded_errors_in_memory(tmp_path, mock_ollama, mock_collection):
     """RAG agent loads preloaded errors from errors.json on startup."""
-    import shutil
-
-    # Copy real errors.json to tmp memory dir
-    real_errors = (
-        Path(__file__).parent.parent.parent
-        / "agents"
-        / "rag_agent"
-        / "memory"
-        / "errors.json"
-    )
+    import json
+    
     memory_dir = tmp_path / "memory"
     memory_dir.mkdir()
-    shutil.copy(real_errors, memory_dir / "errors.json")
+    error_file = memory_dir / "errors.json"
+    
+    mock_data = {
+        "errors": [
+            {"error_type": "FileNotFoundError", "task_type": "load_document", "context": "file missing"},
+            {"error_type": "OllamaConnectionError", "task_type": "query", "context": "ollama down"},
+            {"error_type": "TimeoutError", "task_type": "query", "context": "too long"},
+            {"error_type": "SyntaxError", "task_type": "parsing", "context": "invalid format"},
+            {"error_type": "ValueError", "task_type": "loading", "context": "wrong value"}
+        ]
+    }
+    
+    with open(error_file, "w") as f:
+        json.dump(mock_data, f)
 
     with patch("chromadb.PersistentClient") as mock_chroma:
         mock_chroma.return_value.get_or_create_collection.return_value = (
