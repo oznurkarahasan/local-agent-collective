@@ -331,14 +331,18 @@ sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/c
 ## for the model downloading
 
 ```bash
-ollama pull gemma4:e4b
++ ollama pull gemma4:e4b
 
 ollama pull deepseek-coder:7b
 
-ollama pull nomic-embed-text:v1.5
++ ollama pull nomic-embed-text:v1.5
 ollama pull llama3.2:3b
 
-ollama pull phi3.5:moe
+ollama pull phi3.5
+
+# to docker volume
+docker exec -it local-agent-ollama ollama pull gemma4:e4b
+docker exec -it local-agent-ollama ollama run gemma4:e4b
 ```
 
 > **"Your data stays with you."**
