@@ -2,13 +2,19 @@
 orchestrator.py
 
 Plans and distributes tasks across agents.
-Uses DeepSeek for task analysis and planning,
-then executes steps in parallel or sequentially
-based on dependencies.
+Uses Gemma 4 (CEO) for task analysis, planning, and final reporting.
+Executes steps in parallel or sequentially based on dependencies.
+
+Model Strategy:
+- Gemma 4 E4B  → orchestration / planning / final report  (keep_alive="0")
+- nomic-embed  → embedding, stays warm                     (keep_alive="-1")
+- Other agents → their own preferred_model_roles           (keep_alive="0")
 """
 
 import asyncio
 import json
+import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -16,11 +22,66 @@ from backend.core.agent_registry import AgentRegistry
 from backend.core.model_registry import ModelRegistry
 from backend.core.ollama_client import OllamaClient
 
+logger = logging.getLogger(__name__)
+
+# Models that should stay loaded in VRAM permanently (too small/too frequent to reload)
+ALWAYS_WARM_ROLES = {"embedding"}
+
 
 class OrchestratorError(Exception):
     """Raised when orchestration fails."""
 
     pass
+
+def _extract_json(text: str) -> Optional[dict]:
+    """
+    Robustly extract a JSON object from model output.
+
+    Handles:
+    - DeepSeek R1 <think>...</think> blocks
+    - ```json ... ``` markdown fences
+    - Trailing commentary after the closing brace
+    - Nested braces (finds the outermost balanced pair)
+
+    Args:
+        text: Raw model response string.
+
+    Returns:
+        Parsed dict, or None if extraction fails.
+    """
+    if not text:
+        return None
+
+    # 1. Strip <think>...</think> blocks (DeepSeek R1, QwQ style)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+
+    # 2. Strip ```json ... ``` or ``` ... ``` markdown fences
+    text = re.sub(r"```(?:json)?\s*([\s\S]*?)```", r"\1", text)
+
+    # 3. Find the outermost balanced { } pair
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    depth = 0
+    end = -1
+    for i, ch in enumerate(text[start:], start=start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
+
+    if end == -1:
+        return None
+
+    try:
+        return json.loads(text[start:end])
+    except json.JSONDecodeError as exc:
+        logger.warning("JSON parse failed after extraction: %s", exc)
+        return None
 
 
 class Orchestrator:
@@ -29,11 +90,16 @@ class Orchestrator:
 
     Flow:
     1. Receive user task
-    2. Send to DeepSeek -> get execution plan (JSON)
+    2. Send to Gemma 4 (CEO) → get execution plan (JSON)
     3. Resolve step dependencies
     4. Run independent steps in parallel (Semaphore controlled)
     5. Run dependent steps sequentially
-    6. Collect results -> send to DeepSeek for final report
+    6. Collect results → send to Gemma 4 for final report
+
+    Keep-Alive Strategy:
+    - Orchestration model (Gemma 4): keep_alive="0"  → unload after each use
+    - Embedding model (nomic-embed): keep_alive="-1" → stay loaded permanently
+    - All other models:              keep_alive="0"  → unload after each use
     """
 
     def __init__(
@@ -49,6 +115,18 @@ class Orchestrator:
 
         config_dir = config_dir or (Path(__file__).parent.parent.parent / "config")
         self.model_registry = ModelRegistry(config_path=config_dir / "models.json")
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+    
+    async def initialize(self):
+        """
+        Explicitly warm up models before first run.
+        Ensures embedding model is ready in VRAM to avoid cold-start delays.
+        """
+        logger.info("Initializing Orchestrator: warming up system models...")
+        await self._warm_up_models()
 
     async def run(self, user_input: str) -> dict:
         """
@@ -81,13 +159,39 @@ class Orchestrator:
             "report": report,
         }
 
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    async def _warm_up_models(self) -> None:
+        """
+        Pre-load always-warm models into VRAM.
+
+        Called once at startup. Failures are logged but do not crash the
+        orchestrator — cold-start is still better than no start.
+        """
+        for role in ALWAYS_WARM_ROLES:
+            try:
+                model = self.model_registry.get_model_by_role(role)
+                if model:
+                    # Send an empty embed to load the model; keep_alive="-1" keeps it hot
+                    await self.ollama.embed(
+                        model=model["id"],
+                        text="warmup",
+                        keep_alive="-1",
+                    )
+                    logger.info("Warmed up model '%s' (role: %s)", model["id"], role)
+            except Exception as exc:
+                logger.warning("Could not warm up role '%s': %s", role, exc)
+
     async def _plan(self, user_input: str) -> dict:
         """
-        Send user input to DeepSeek and get an execution plan.
+        Send user input to Gemma 4 (CEO) and get an execution plan.
 
         Returns:
-            Plan dict with 'steps' list.
+            Plan dict with 'steps' list, or empty dict on failure.
         """
+        # CEO / orchestration model = Gemma 4 E4B
         orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
 
@@ -105,9 +209,10 @@ class Orchestrator:
         )
 
         system_prompt = (
-            "You are a task orchestrator. "
+            "You are a task orchestrator (CEO). "
             "Analyze the user's request and create an execution plan. "
-            "Return ONLY a valid JSON object with this exact structure:\n"
+            "Return ONLY a valid JSON object — no markdown, no explanation, no <think> tags.\n"
+            "Required structure:\n"
             "{\n"
             '  "steps": [\n'
             "    {\n"
@@ -118,11 +223,12 @@ class Orchestrator:
             '      "depends_on": []\n'
             "    }\n"
             "  ]\n"
-            "}\n"
+            "}\n\n"
             "Rules:\n"
-            "- depends_on contains step ids that must complete before this step\n"
+            "- depends_on lists step ids that must complete before this step runs\n"
             "- Steps with empty depends_on can run in parallel\n"
-            "- Use only agents from the available agents list"
+            "- Use only agents from the available agents list\n"
+            "- Output raw JSON only — no backticks, no prose"
         )
 
         user_message = (
@@ -138,18 +244,18 @@ class Orchestrator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                keep_alive="0",
+                keep_alive="0",  # Gemma 4 unloads after planning is done
             )
 
-            json_start = response.find("{")
-            json_end = response.rfind("}") + 1
-            if json_start == -1 or json_end == 0:
+            plan = _extract_json(response)
+            if plan is None:
+                logger.warning("_plan: could not extract JSON from response:\n%s", response[:500])
                 return {"steps": []}
 
-            plan = json.loads(response[json_start:json_end])
             return plan
 
-        except Exception:
+        except Exception as exc:
+            logger.error("_plan failed: %s", exc)
             return {"steps": []}
 
     async def _execute_plan(self, plan: dict) -> list[dict]:
@@ -171,12 +277,17 @@ class Orchestrator:
             ]
 
             if not ready:
+                # Dependency cycle or unknown dep — bail out gracefully
+                logger.error(
+                    "_execute_plan: deadlock detected. Remaining steps: %s",
+                    [s["id"] for s in remaining],
+                )
                 break
 
             tasks = [self._execute_step(step, completed) for step in ready]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for step, result in zip(ready, results):
+            for step, result in zip(ready, batch_results):
                 if isinstance(result, Exception):
                     completed[step["id"]] = {
                         "step_id": step["id"],
@@ -224,16 +335,18 @@ class Orchestrator:
             return result
 
     async def _report(self, user_input: str, plan: dict, results: list[dict]) -> str:
-        """Synthesize all results into a final report via DeepSeek."""
+        """
+        Synthesize all results into a final report via Gemma 4 (CEO).
+        """
         orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
 
         results_summary = json.dumps(results, indent=2, ensure_ascii=False)
 
         system_content = (
-            "You are a helpful assistant. "
-            "Synthesize the agent results into a clear, "
-            "concise report for the user."
+            "You are a helpful assistant (CEO). "
+            "Synthesize the agent results into a clear, concise report for the user. "
+            "Write in plain text — no JSON, no markdown headers."
         )
         user_content = (
             f"Original request: {user_input}\n\n"
@@ -248,9 +361,10 @@ class Orchestrator:
                     {"role": "system", "content": system_content},
                     {"role": "user", "content": user_content},
                 ],
-                keep_alive="0",
+                keep_alive="0",  # Unload after report is written
             )
             return report
 
-        except Exception as e:
-            return f"Report generation failed: {e}"
+        except Exception as exc:
+            logger.error("_report failed: %s", exc)
+            return f"Report generation failed: {exc}"
