@@ -398,37 +398,21 @@
 
     const label = document.createElement('div');
     label.className = 'msg-label';
-    label.textContent = 'Indis.ai';
+    label.textContent = 'Indis.ai (CEO)';
     div.appendChild(label);
 
-    const results = data.results || {};
+    const orch = data.results?.orchestrator;
 
-    if (Object.keys(results).length === 0) {
+    if (!orch || !orch.report) {
       const p = document.createElement('p');
       p.textContent = data.message || 'No relevant content found.';
       div.appendChild(p);
     } else {
-      for (const [key, val] of Object.entries(results)) {
-        if (Object.keys(results).length > 1) {
-          const lbl = document.createElement('div');
-          lbl.className = 'msg-section-label';
-          lbl.textContent = key === 'code' ? '⌨ Code' : '📄 Documents';
-          div.appendChild(lbl);
-        }
-
-        const block = document.createElement('div');
-        block.className = 'answer-block';
-        block.style.whiteSpace = 'pre-wrap';
-        block.textContent = val.answer;
-        div.appendChild(block);
-
-        if (val.sources?.length) {
-          const src = document.createElement('div');
-          src.className = 'source-line';
-          src.textContent = 'Sources: ' + val.sources.map(s => s.split('/').pop()).join(', ');
-          div.appendChild(src);
-        }
-      }
+      const block = document.createElement('div');
+      block.className = 'answer-block';
+      block.style.whiteSpace = 'pre-wrap';
+      block.textContent = orch.report;
+      div.appendChild(block);
     }
 
     messages.appendChild(div);

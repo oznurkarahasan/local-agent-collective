@@ -122,24 +122,16 @@ class CoderAgent(AgentBase):
 
         Supported types:
         - load_code: {"type": "load_code", "input": "/path/to/file.py"}
-        - query: {"type": "query", "input": "your question"}
+        - anything else defaults to: query {"type": "...", "input": "your question"}
         """
         task_type = task.get("type")
         task_input = task.get("input", "")
 
         if task_type == "load_code":
             return await self._handle_load_code(task_input)
-        elif task_type == "query":
-            return await self._handle_query(task_input)
         else:
-            return {
-                "success": False,
-                "output": None,
-                "error": (
-                    f"Unknown task type: '{task_type}'. "
-                    "Supported: 'load_code', 'query'"
-                ),
-            }
+            # The LLM planner might generate task types like 'code_explanation' based on capabilities.
+            return await self._handle_query(task_input)
 
     # --- Code Loading ---
 
@@ -316,11 +308,15 @@ class CoderAgent(AgentBase):
         Returns:
             List of dicts with 'text', 'source', 'language' keys.
         """
+        collection_count = self.collection.count()
+        if collection_count == 0:
+            return []
+
         question_vector = await self.ollama.embed(model=self.embed_model, text=question)
 
         results = self.collection.query(
             query_embeddings=[question_vector],
-            n_results=min(self.top_k, self.collection.count()),
+            n_results=min(self.top_k, collection_count),
             include=["documents", "metadatas"],
         )
 

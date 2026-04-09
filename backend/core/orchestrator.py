@@ -140,7 +140,7 @@ class Orchestrator:
         """
         plan = await self._plan(user_input)
 
-        if not plan or not plan.get("steps"):
+        if plan is None:
             return {
                 "success": False,
                 "error": "Could not generate execution plan",
@@ -149,8 +149,15 @@ class Orchestrator:
                 "report": None,
             }
 
-        results = await self._execute_plan(plan)
-        report = await self._report(user_input, plan, results)
+        steps = plan.get("steps", [])
+        
+        if not steps:
+            # Direct conversation or unrecognized task - skip agent execution
+            results = []
+            report = await self._report(user_input, plan, results)
+        else:
+            results = await self._execute_plan(plan)
+            report = await self._report(user_input, plan, results)
 
         return {
             "success": True,
@@ -228,7 +235,8 @@ class Orchestrator:
             "- depends_on lists step ids that must complete before this step runs\n"
             "- Steps with empty depends_on can run in parallel\n"
             "- Use only agents from the available agents list\n"
-            "- Output raw JSON only — no backticks, no prose"
+            "- Output raw JSON only — no backticks, no prose\n"
+            "- If the user is just having a casual conversation, asking a general question, or no agents apply, return an empty steps list (`\"steps\": []`)"
         )
 
         user_message = (
@@ -344,15 +352,20 @@ class Orchestrator:
         results_summary = json.dumps(results, indent=2, ensure_ascii=False)
 
         system_content = (
-            "You are a helpful assistant (CEO). "
-            "Synthesize the agent results into a clear, concise report for the user. "
+            "You are a helpful assistant (CEO) of Indis.ai local agent collective. "
+            "If agent results are provided, synthesize them into a clear report. "
+            "If no agent results are provided, answer the user normally like a chatbot. "
             "Write in plain text — no JSON, no markdown headers."
         )
-        user_content = (
-            f"Original request: {user_input}\n\n"
-            f"Agent results:\n{results_summary}\n\n"
-            "Write a final report."
-        )
+
+        if not results:
+            user_content = f"User: {user_input}\n\nAnswer:"
+        else:
+            user_content = (
+                f"Original request: {user_input}\n\n"
+                f"Agent results:\n{results_summary}\n\n"
+                "Write a final report synthesizing these results."
+            )
 
         try:
             report = await self.ollama.chat(
