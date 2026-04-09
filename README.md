@@ -333,11 +333,12 @@ sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/c
 ```bash
 + ollama pull gemma4:e4b
 
-ollama pull deepseek-coder:7b
++ ollama pull qwen2.5-coder:3b
 
 + ollama pull nomic-embed-text:v1.5
-ollama pull llama3.2:3b
++ ollama pull llama3.2:3b
 
++ ollama pull deepseek-r1:1.5b
 ollama pull phi3.5
 
 # to docker volume

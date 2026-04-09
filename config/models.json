@@ -5,40 +5,45 @@
       "roles": ["orchestration", "planning", "ceo"],
       "context_window": 131072,
       "languages": ["en", "tr"],
-      "size_gb": 5.0,
-      "keep_alive": "0"
+      "size_gb": 9.6,
+      "keep_alive": "0",
+      "priority": 1
     },
     {
-      "id": "deepseek-coder:7b",
-      "roles": ["code_analysis", "code_generation", "reasoning"],
-      "context_window": 128000,
+      "id": "qwen2.5-coder:3b",
+      "roles": ["code_generation", "code_analysis", "dev"],
+      "context_window": 32768,
       "languages": ["en", "tr", "code"],
-      "size_gb": 4.5,
-      "keep_alive": "0"
+      "size_gb": 1.9,
+      "keep_alive": "0",
+      "priority": 2
     },
     {
-      "id": "phi3.5:moe",
-      "roles": ["research", "analysis", "reasoning"],
+      "id": "deepseek-r1:1.5b",
+      "roles": ["reasoning", "qa", "quality_control", "validation"],
       "context_window": 128000,
       "languages": ["en", "tr"],
-      "size_gb": 4.0,
-      "keep_alive": "0"
+      "size_gb": 1.1,
+      "keep_alive": "0",
+      "priority": 2
+    },
+    {
+      "id": "phi3.5:latest",
+      "roles": ["research", "analysis", "web_search_interpretation"],
+      "context_window": 128000,
+      "languages": ["en", "tr"],
+      "size_gb": 2.2,
+      "keep_alive": "0",
+      "priority": 3
     },
     {
       "id": "llama3.2:3b",
-      "roles": ["rag", "documentation", "doc_analysis"],
+      "roles": ["rag", "documentation", "translation", "doc_analysis"],
       "context_window": 128000,
       "languages": ["en", "tr"],
       "size_gb": 2.0,
-      "keep_alive": "0"
-    },
-    {
-      "id": "qwen2.5:1.5b",
-      "roles": ["qa", "quality_control", "validation"],
-      "context_window": 32768,
-      "languages": ["en", "tr"],
-      "size_gb": 1.2,
-      "keep_alive": "0"
+      "keep_alive": "0",
+      "priority": 3
     },
     {
       "id": "nomic-embed-text:v1.5",
@@ -46,7 +51,7 @@
       "context_window": 8192,
       "languages": ["multilingual"],
       "size_gb": 0.274,
-      "keep_alive": "0"
+      "keep_alive": "-1"
     }
   ]
 }
