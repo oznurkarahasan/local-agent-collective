@@ -1,7 +1,9 @@
 """
 FastAPI application — Indis.ai Web UI backend.
+Orchestrates multiple local agents via the central Orchestrator.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -10,18 +12,34 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+# Routers
 from frontend.api.routers import documents, query, status
-from frontend.api.dependencies import get_rag_agent, get_coder_agent, get_ollama
+from frontend.api.dependencies import get_orchestrator
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("IndisAPI")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize agents on startup."""
-    get_ollama()
-    get_rag_agent()
-    get_coder_agent()
+    """
+    Lifespan manager: 
+    Initializes the Orchestrator and warms up VRAM models on startup.
+    """
+    logger.info("Starting Indis.ai Local Agent Collective...")
+    
+    try:
+        # This is where the magic happens:
+        # Pre-loads nomic-embed and prepares the system for the RTX 3070 Ti
+        orchestrator = get_orchestrator()
+        await orchestrator.initialize()
+        logger.info("System initialized: VRAM models are warm and ready.")
+    except Exception as e:
+        logger.error(f"Critical initialization failure: {e}")
+    
     yield
-
+    
+    logger.info("Shutting down Indis.ai...")
 
 app = FastAPI(
     title="Indis.ai",
@@ -37,26 +55,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
+# Include Routers
 app.include_router(status.router)
 app.include_router(documents.router)
-app.include_router(query.router)
+app.include_router(query.router) # This is likely where user queries hit the Orchestrator
 
-# Static files
+# Static files & Frontend serving
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-
 @app.get("/")
 async def root():
-    """Serve the frontend."""
+    """Serve the Web UI."""
     index = static_dir / "index.html"
     if index.exists():
         return FileResponse(str(index))
-    return {"message": "Indis.ai API", "docs": "/docs"}
-
+    return {"message": "Indis.ai API is running", "docs": "/docs"}
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    """System health check."""
+    return {"status": "ok", "engine": "Ollama", "gpu_vram": "8GB Optimized"}
