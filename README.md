@@ -339,11 +339,17 @@ sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/c
 + ollama pull llama3.2:3b
 
 + ollama pull deepseek-r1:1.5b
-ollama pull phi3.5
++ ollama pull phi3.5:latest
+
+# start docker
+sudo systemctl start docker
 
 # to docker volume
 docker exec -it local-agent-ollama ollama pull gemma4:e4b
 docker exec -it local-agent-ollama ollama run gemma4:e4b
+
+# run in web
+PYTHONPATH=. .venv/bin/uvicorn frontend.api.main:app --host 0.0.0.0 --port 8000
 ```
 
 > **"Your data stays with you."**
