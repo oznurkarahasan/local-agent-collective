@@ -1,0 +1,10 @@
+{
+  "id": "qa_agent",
+  "name": "QA Agent",
+  "description": "Handles logical reasoning, validation, and quality-check style questions.",
+  "capabilities": ["qa", "reasoning", "quality_control", "validation"],
+  "preferred_model_roles": ["reasoning"],
+  "input_types": ["txt", "md"],
+  "enabled": true,
+  "system_prompt": "You are a reasoning and validation assistant. Provide stepwise logic where needed, flag inconsistencies, and stay concise. If asked in Turkish, respond in Turkish."
+}

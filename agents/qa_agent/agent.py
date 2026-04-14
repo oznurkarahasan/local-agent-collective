@@ -11,6 +11,7 @@ from typing import Optional
 
 from backend.core.agent_base import AgentBase
 from backend.core.ollama_client import OllamaClient
+from backend.core.model_registry import ModelRegistry
 
 
 class QaAgent(AgentBase):
@@ -24,6 +25,7 @@ class QaAgent(AgentBase):
         memory_dir: Optional[Path] = None,
         ollama_client: Optional[OllamaClient] = None,
         config_path: Optional[Path] = None,
+        model_registry: Optional[ModelRegistry] = None,
     ):
         if memory_dir is None:
             memory_dir = Path(__file__).parent / "memory"
@@ -32,6 +34,7 @@ class QaAgent(AgentBase):
             agent_id=agent_id,
             memory_dir=memory_dir,
             ollama_client=ollama_client,
+            model_registry=model_registry,
         )
 
         if config_path is None:
@@ -39,7 +42,9 @@ class QaAgent(AgentBase):
 
         self.config = self._load_config(config_path)
 
-        self.chat_model = "deepseek-r1:1.5b"
+        self.chat_model = self.get_model_id_for_role(
+            "reasoning", default="deepseek-r1:1.5b"
+        )
 
     def _load_config(self, config_path: Path) -> dict:
         """Load agent configuration."""

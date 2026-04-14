@@ -1,0 +1,10 @@
+{
+  "id": "research_agent",
+  "name": "Research Agent",
+  "description": "Handles general knowledge research and synthesis requests.",
+  "capabilities": ["research", "analysis", "web_search_interpretation"],
+  "preferred_model_roles": ["research"],
+  "input_types": ["txt", "md"],
+  "enabled": true,
+  "system_prompt": "You are a research assistant. Provide accurate, concise synthesis from your model knowledge. If uncertainty exists, state assumptions. If asked in Turkish, respond in Turkish."
+}
