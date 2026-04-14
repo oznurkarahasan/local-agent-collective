@@ -60,7 +60,9 @@ app.add_middleware(
 # Include Routers
 app.include_router(status.router)
 app.include_router(documents.router)
-app.include_router(query.router)  # This is likely where user queries hit the Orchestrator
+app.include_router(
+    query.router
+)  # This is likely where user queries hit the Orchestrator
 
 # Static files & Frontend serving
 static_dir = Path(__file__).parent.parent / "static"

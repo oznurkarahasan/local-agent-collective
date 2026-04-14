@@ -30,7 +30,9 @@ async def query(request: QueryRequest, orchestrator=Depends(get_orchestrator)):
         return {
             "question": request.question,
             "results": {},
-            "message": result.get("error", "Orchestrator failed to process the request."),
+            "message": result.get(
+                "error", "Orchestrator failed to process the request."
+            ),
         }
 
     return {

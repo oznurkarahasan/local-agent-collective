@@ -10,7 +10,9 @@ router = APIRouter(prefix="/status", tags=["status"])
 
 
 @router.get("")
-async def get_status(orchestrator=Depends(get_orchestrator), ollama=Depends(get_ollama)):
+async def get_status(
+    orchestrator=Depends(get_orchestrator), ollama=Depends(get_ollama)
+):
     """System status — Ollama, models, agents."""
     ollama_ok = await ollama.ping()
 
@@ -57,7 +59,9 @@ async def get_status(orchestrator=Depends(get_orchestrator), ollama=Depends(get_
 
 
 @router.get("/memory")
-async def get_memory_stats(orchestrator=Depends(get_orchestrator), ollama=Depends(get_ollama)):
+async def get_memory_stats(
+    orchestrator=Depends(get_orchestrator), ollama=Depends(get_ollama)
+):
     """Agent memory statistics."""
     rag_stats = {"skills": [], "errors": []}
     coder_stats = {"skills": [], "errors": []}
@@ -69,7 +73,10 @@ async def get_memory_stats(orchestrator=Depends(get_orchestrator), ollama=Depend
             memory_dir=orchestrator.registry.agents_dir / "rag_agent" / "memory",
             ollama_client=ollama,
         )
-        rag_stats = {"skills": rag.memory.get_skills(), "errors": rag.memory.get_errors()}
+        rag_stats = {
+            "skills": rag.memory.get_skills(),
+            "errors": rag.memory.get_errors(),
+        }
 
     coder_class = orchestrator.registry.get_class("coder_agent")
     if coder_class:
@@ -78,7 +85,10 @@ async def get_memory_stats(orchestrator=Depends(get_orchestrator), ollama=Depend
             memory_dir=orchestrator.registry.agents_dir / "coder_agent" / "memory",
             ollama_client=ollama,
         )
-        coder_stats = {"skills": coder.memory.get_skills(), "errors": coder.memory.get_errors()}
+        coder_stats = {
+            "skills": coder.memory.get_skills(),
+            "errors": coder.memory.get_errors(),
+        }
 
     return {
         "rag_agent": rag_stats,

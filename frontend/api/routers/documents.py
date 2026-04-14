@@ -20,7 +20,9 @@ _loaded_files: list[dict] = []
 
 
 @router.post("/load")
-async def load_document(file: UploadFile = File(...), orchestrator=Depends(get_orchestrator)):
+async def load_document(
+    file: UploadFile = File(...), orchestrator=Depends(get_orchestrator)
+):
     """Upload and load a document or code file."""
     suffix = Path(file.filename).suffix.lower()
 
@@ -53,15 +55,17 @@ async def load_document(file: UploadFile = File(...), orchestrator=Depends(get_o
                         "path": str(tmp_path),
                         "source_name": file.filename,
                     },
-                    "depends_on": []
+                    "depends_on": [],
                 }
             ]
         }
 
         step_results = await orchestrator._execute_plan(plan)
-        result = step_results[0] if step_results else {
-            "success": False, "error": "Execution failed"
-        }
+        result = (
+            step_results[0]
+            if step_results
+            else {"success": False, "error": "Execution failed"}
+        )
 
         if not result.get("success"):
             raise HTTPException(
