@@ -39,11 +39,13 @@ class ResearchAgent(AgentBase):
 
         if config_path is None:
             config_path = Path(__file__).parent / "config.json"
-        
+
         self.config = self._load_config(config_path)
 
         # Resolve model via registry
-        self.chat_model = self.get_model_id_for_role("research", default="phi3.5:latest")
+        self.chat_model = self.get_model_id_for_role(
+            "research", default="phi3.5:latest"
+        )
 
     def _load_config(self, config_path: Path) -> dict:
         """Load agent configuration."""
@@ -95,7 +97,10 @@ class ResearchAgent(AgentBase):
             model=self.chat_model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Please research and explain the following:\n\n{str(user_input)}"},
+                {
+                    "role": "user",
+                    "content": f"Please research and explain the following:\n\n{str(user_input)}",
+                },
             ],
             keep_alive="0",
         )

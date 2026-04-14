@@ -195,8 +195,8 @@ class AgentBase(ABC):
             model_info = self.model_registry.get_model_by_role(role)
             if model_info:
                 return model_info["id"]
-        
+
         if default:
             return default
-            
+
         raise ValueError(f"No model found for role '{role}' and no default provided.")

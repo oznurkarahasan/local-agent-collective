@@ -33,6 +33,7 @@ class OrchestratorError(Exception):
 
     pass
 
+
 def _extract_json(text: str) -> Optional[dict]:
     """
     Robustly extract a JSON object from model output.
@@ -119,7 +120,7 @@ class Orchestrator:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
-    
+
     async def initialize(self):
         """
         Explicitly warm up models before first run.
@@ -150,7 +151,7 @@ class Orchestrator:
             }
 
         steps = plan.get("steps", [])
-        
+
         if not steps:
             # Direct conversation or unrecognized task - skip agent execution
             results = []
@@ -236,7 +237,8 @@ class Orchestrator:
             "- Steps with empty depends_on can run in parallel\n"
             "- Use only agents from the available agents list\n"
             "- Output raw JSON only — no backticks, no prose\n"
-            "- If the user is just having a casual conversation, asking a general question, or no agents apply, return an empty steps list (`\"steps\": []`)"
+            "- If the user is just having a casual conversation, asking a general "
+            'question, or no agents apply, return an empty steps list (`"steps": []`)'
         )
 
         user_message = (
@@ -257,7 +259,9 @@ class Orchestrator:
 
             plan = _extract_json(response)
             if plan is None:
-                logger.warning("_plan: could not extract JSON from response:\n%s", response[:500])
+                logger.warning(
+                    "_plan: could not extract JSON from response:\n%s", response[:500]
+                )
                 return {"steps": []}
 
             return plan

@@ -36,7 +36,7 @@ class QaAgent(AgentBase):
 
         if config_path is None:
             config_path = Path(__file__).parent / "config.json"
-        
+
         self.config = self._load_config(config_path)
 
         self.chat_model = "deepseek-r1:1.5b"

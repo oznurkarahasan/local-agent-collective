@@ -106,8 +106,12 @@ class CoderAgent(AgentBase):
         self.top_k = 5
 
         # Models — resolve via registry
-        self.embed_model = self.get_model_id_for_role("embedding", default="nomic-embed-text:v1.5")
-        self.chat_model = self.get_model_id_for_role("code_analysis", default="qwen2.5-coder:3b")
+        self.embed_model = self.get_model_id_for_role(
+            "embedding", default="nomic-embed-text:v1.5"
+        )
+        self.chat_model = self.get_model_id_for_role(
+            "code_analysis", default="qwen2.5-coder:3b"
+        )
 
     def _load_config(self, config_path: Path) -> dict:
         """Load agent configuration from config.json."""
@@ -139,7 +143,8 @@ class CoderAgent(AgentBase):
         if task_type == "load_code":
             return await self._handle_load_code(task_input)
         else:
-            # The LLM planner might generate task types like 'code_explanation' based on capabilities.
+            # The LLM planner might generate task types like 'code_explanation'
+            # based on capabilities.
             return await self._handle_query(task_input)
 
     # --- Code Loading ---

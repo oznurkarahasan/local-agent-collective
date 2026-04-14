@@ -83,7 +83,9 @@ class RagAgent(AgentBase):
         self.top_k = 5
 
         # Embedding model — resolve via registry
-        self.embed_model = self.get_model_id_for_role("embedding", default="nomic-embed-text:v1.5")
+        self.embed_model = self.get_model_id_for_role(
+            "embedding", default="nomic-embed-text:v1.5"
+        )
 
         # Chat model — resolve via registry (Fixes qwen3:4b 404 issue)
         self.chat_model = self.get_model_id_for_role("rag", default="llama3.2:3b")
@@ -231,8 +233,7 @@ class RagAgent(AgentBase):
         ids = [f"{source}__chunk_{i}" for i in range(len(texts))]
         display_source = source_name or source
         metadatas = [
-            {"source": display_source, "chunk_index": i}
-            for i in range(len(texts))
+            {"source": display_source, "chunk_index": i} for i in range(len(texts))
         ]
 
         # Generate embeddings
