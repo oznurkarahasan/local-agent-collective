@@ -23,12 +23,20 @@ async def get_status(orchestrator=Depends(get_orchestrator), ollama=Depends(get_
 
     rag_class = orchestrator.registry.get_class("rag_agent")
     if rag_class:
-        rag = rag_class(agent_id="rag_agent", memory_dir=orchestrator.registry.agents_dir / "rag_agent" / "memory", ollama_client=ollama)
+        rag = rag_class(
+            agent_id="rag_agent",
+            memory_dir=orchestrator.registry.agents_dir / "rag_agent" / "memory",
+            ollama_client=ollama,
+        )
         rag_info = rag.get_agent_info()
 
     coder_class = orchestrator.registry.get_class("coder_agent")
     if coder_class:
-        coder = coder_class(agent_id="coder_agent", memory_dir=orchestrator.registry.agents_dir / "coder_agent" / "memory", ollama_client=ollama)
+        coder = coder_class(
+            agent_id="coder_agent",
+            memory_dir=orchestrator.registry.agents_dir / "coder_agent" / "memory",
+            ollama_client=ollama,
+        )
         coder_info = coder.get_agent_info()
 
     return {
@@ -56,12 +64,20 @@ async def get_memory_stats(orchestrator=Depends(get_orchestrator), ollama=Depend
 
     rag_class = orchestrator.registry.get_class("rag_agent")
     if rag_class:
-        rag = rag_class(agent_id="rag_agent", memory_dir=orchestrator.registry.agents_dir / "rag_agent" / "memory", ollama_client=ollama)
+        rag = rag_class(
+            agent_id="rag_agent",
+            memory_dir=orchestrator.registry.agents_dir / "rag_agent" / "memory",
+            ollama_client=ollama,
+        )
         rag_stats = {"skills": rag.memory.get_skills(), "errors": rag.memory.get_errors()}
 
     coder_class = orchestrator.registry.get_class("coder_agent")
     if coder_class:
-        coder = coder_class(agent_id="coder_agent", memory_dir=orchestrator.registry.agents_dir / "coder_agent" / "memory", ollama_client=ollama)
+        coder = coder_class(
+            agent_id="coder_agent",
+            memory_dir=orchestrator.registry.agents_dir / "coder_agent" / "memory",
+            ollama_client=ollama,
+        )
         coder_stats = {"skills": coder.memory.get_skills(), "errors": coder.memory.get_errors()}
 
     return {

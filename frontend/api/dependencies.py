@@ -3,7 +3,6 @@ Shared instances — singleton pattern.
 The Orchestrator is initialized once at startup and reused across requests.
 """
 
-from pathlib import Path
 from backend.core.ollama_client import OllamaClient
 from backend.core.orchestrator import Orchestrator
 

@@ -57,9 +57,11 @@ async def load_document(file: UploadFile = File(...), orchestrator=Depends(get_o
                 }
             ]
         }
-        
+
         step_results = await orchestrator._execute_plan(plan)
-        result = step_results[0] if step_results else {"success": False, "error": "Execution failed"}
+        result = step_results[0] if step_results else {
+            "success": False, "error": "Execution failed"
+        }
 
         if not result.get("success"):
             raise HTTPException(
