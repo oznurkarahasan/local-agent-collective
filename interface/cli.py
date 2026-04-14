@@ -232,13 +232,31 @@ class CLI:
             print("Usage: ask <question>")
             return
 
+        if not self.loaded_docs and not self.loaded_code:
+            print("No files loaded. Use 'load <file>' first.")
+            return
+
         print("Thinking...")
-        result = await self.orchestrator.run(user_input=question)
-        if result.get("success"):
-            report = result.get("report", "")
-            print(f"\n{report}\n")
+        # Prefer collective orchestration when available. Tests and lightweight
+        # CLI usage may run without orchestrator initialization, so keep the
+        # legacy direct-agent fallback path.
+        if self.orchestrator is not None:
+            result = await self.orchestrator.run(user_input=question)
+            if result.get("success"):
+                report = result.get("report", "")
+                print(f"\n{report}\n")
+            else:
+                print(f"  ✗ Query failed: {result.get('error')}")
+            return
+
+        has_docs = bool(self.loaded_docs)
+        has_code = bool(self.loaded_code)
+        if has_docs and has_code:
+            await self._ask_both(question)
+        elif has_docs:
+            await self._ask_agent(self.rag_agent, question, "query")
         else:
-            print(f"  ✗ Query failed: {result.get('error')}")
+            await self._ask_agent(self.coder_agent, question, "query")
 
     async def _ask_agent(self, agent, question: str, task_type: str):
         """Query a single agent and print the result."""

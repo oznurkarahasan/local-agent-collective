@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 from backend.core.agent_registry import AgentRegistry
+from backend.core.context_manager import ContextManager
 from backend.core.model_registry import ModelRegistry
 from backend.core.ollama_client import OllamaClient
 
@@ -116,6 +117,7 @@ class Orchestrator:
 
         config_dir = config_dir or (Path(__file__).parent.parent.parent / "config")
         self.model_registry = ModelRegistry(config_path=config_dir / "models.json")
+        self.context_manager = ContextManager()
 
     # ------------------------------------------------------------------
     # Public API
@@ -130,7 +132,7 @@ class Orchestrator:
         await self._warm_up_models()
         self._bootstrap_agent_memories()
 
-    async def run(self, user_input: str) -> dict:
+    async def run(self, user_input: str, session_id: str = "default") -> dict:
         """
         Main entry point. Receives user input and returns final report.
 
@@ -140,7 +142,12 @@ class Orchestrator:
         Returns:
             Dict with 'success', 'plan', 'results', and 'report' fields.
         """
-        plan = await self._plan(user_input)
+        self.context_manager.append_message(
+            session_id=session_id,
+            role="user",
+            content=user_input,
+        )
+        plan = await self._plan(user_input, session_id=session_id)
 
         if plan is None:
             return {
@@ -156,10 +163,16 @@ class Orchestrator:
         if not steps:
             # Direct conversation or unrecognized task - skip agent execution
             results = []
-            report = await self._report(user_input, plan, results)
+            report = await self._report(user_input, session_id, plan, results)
         else:
-            results = await self._execute_plan(plan)
-            report = await self._report(user_input, plan, results)
+            results = await self._execute_plan(plan, session_id=session_id)
+            report = await self._report(user_input, session_id, plan, results)
+
+        self.context_manager.append_message(
+            session_id=session_id,
+            role="assistant",
+            content=report,
+        )
 
         return {
             "success": True,
@@ -366,7 +379,7 @@ class Orchestrator:
 
         return None
 
-    async def _plan(self, user_input: str) -> dict:
+    async def _plan(self, user_input: str, session_id: str = "default") -> dict:
         """
         Send user input to Gemma 4 (CEO) and get an execution plan.
 
@@ -428,6 +441,7 @@ class Orchestrator:
 
         user_message = (
             f"Available agents:\n{agents_description}\n\n"
+            f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
             f"User request: {user_input}\n\n"
             "Create an execution plan."
         )
@@ -455,7 +469,7 @@ class Orchestrator:
             logger.error("_plan failed: %s", exc)
             return {"steps": []}
 
-    async def _execute_plan(self, plan: dict) -> list[dict]:
+    async def _execute_plan(self, plan: dict, session_id: str = "default") -> list[dict]:
         """
         Execute all steps respecting dependencies.
 
@@ -481,7 +495,7 @@ class Orchestrator:
                 )
                 break
 
-            tasks = [self._execute_step(step, completed) for step in ready]
+            tasks = [self._execute_step(step, completed, session_id) for step in ready]
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for step, result in zip(ready, batch_results):
@@ -498,7 +512,7 @@ class Orchestrator:
 
         return list(completed.values())
 
-    async def _execute_step(self, step: dict, context: dict) -> dict:
+    async def _execute_step(self, step: dict, context: dict, session_id: str) -> dict:
         """Execute a single plan step using the appropriate agent."""
         async with self.semaphore:
             agent_id = step.get("agent")
@@ -526,13 +540,32 @@ class Orchestrator:
                 "type": step.get("task_type", "unknown"),
                 "input": step.get("input", ""),
                 "context": context,
+                "conversation_context": self.context_manager.get_context_for_prompt(
+                    session_id=session_id, agent_id=agent_id
+                ),
             }
 
+            self.context_manager.append_message(
+                session_id=session_id,
+                role="user",
+                content=task["input"],
+                agent_id=agent_id,
+            )
             result = await agent.run(task)
             result["step_id"] = step["id"]
+            output_text = result.get("output")
+            if output_text is not None:
+                self.context_manager.append_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=str(output_text),
+                    agent_id=agent_id,
+                )
             return result
 
-    async def _report(self, user_input: str, plan: dict, results: list[dict]) -> str:
+    async def _report(
+        self, user_input: str, session_id: str, plan: dict, results: list[dict]
+    ) -> str:
         """
         Synthesize all results into a final report via Gemma 4 (CEO).
         """
@@ -549,9 +582,13 @@ class Orchestrator:
         )
 
         if not results:
-            user_content = f"User: {user_input}\n\nAnswer:"
+            user_content = (
+                f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
+                f"User: {user_input}\n\nAnswer:"
+            )
         else:
             user_content = (
+                f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
                 f"Original request: {user_input}\n\n"
                 f"Agent results:\n{results_summary}\n\n"
                 "Write a final report synthesizing these results."
