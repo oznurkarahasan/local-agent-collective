@@ -14,6 +14,7 @@ from typing import Optional
 
 from backend.core.memory_manager import MemoryManager
 from backend.core.ollama_client import OllamaClient
+from backend.core.model_registry import ModelRegistry
 
 
 class AgentBase(ABC):
@@ -33,6 +34,7 @@ class AgentBase(ABC):
         agent_id: str,
         memory_dir: Path,
         ollama_client: Optional[OllamaClient] = None,
+        model_registry: Optional[ModelRegistry] = None,
     ):
         """
         Initialize the agent.
@@ -45,6 +47,7 @@ class AgentBase(ABC):
         self.agent_id = agent_id
         self.memory = MemoryManager(memory_dir=memory_dir)
         self.ollama = ollama_client or OllamaClient()
+        self.model_registry = model_registry
 
     # --- Abstract methods (must be implemented by each agent) ---
 
@@ -176,3 +179,24 @@ class AgentBase(ABC):
             "skills": self.memory.get_skills(),
             "error_count": len(self.memory.get_errors()),
         }
+
+    def get_model_id_for_role(self, role: str, default: Optional[str] = None) -> str:
+        """
+        Resolve a model ID for a given role via the model registry.
+
+        Args:
+            role: The role to look up e.g. 'rag'
+            default: Default model ID if role is not found
+
+        Returns:
+            Model ID string.
+        """
+        if self.model_registry:
+            model_info = self.model_registry.get_model_by_role(role)
+            if model_info:
+                return model_info["id"]
+        
+        if default:
+            return default
+            
+        raise ValueError(f"No model found for role '{role}' and no default provided.")

@@ -21,6 +21,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from backend.core.agent_base import AgentBase
 from backend.core.ollama_client import OllamaClient
 from backend.core.platform_utils import PlatformUtils
+from backend.core.model_registry import ModelRegistry
 
 
 class RagAgent(AgentBase):
@@ -39,6 +40,7 @@ class RagAgent(AgentBase):
         ollama_client: Optional[OllamaClient] = None,
         chroma_dir: Optional[Path] = None,
         config_path: Optional[Path] = None,
+        model_registry: Optional[ModelRegistry] = None,
     ):
         if memory_dir is None:
             memory_dir = Path(__file__).parent / "memory"
@@ -47,6 +49,7 @@ class RagAgent(AgentBase):
             agent_id=agent_id,
             memory_dir=memory_dir,
             ollama_client=ollama_client,
+            model_registry=model_registry,
         )
 
         # Load agent config
@@ -72,11 +75,11 @@ class RagAgent(AgentBase):
         self.chunk_overlap = 64
         self.top_k = 5
 
-        # Embedding model
-        self.embed_model = "nomic-embed-text:v1.5"
+        # Embedding model — resolve via registry
+        self.embed_model = self.get_model_id_for_role("embedding", default="nomic-embed-text:v1.5")
 
-        # Chat model
-        self.chat_model = "qwen3:4b"
+        # Chat model — resolve via registry (Fixes qwen3:4b 404 issue)
+        self.chat_model = self.get_model_id_for_role("rag", default="llama3.2:3b")
 
     def _load_config(self, config_path: Path) -> dict:
         """Load agent configuration from config.json."""

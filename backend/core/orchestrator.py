@@ -330,6 +330,7 @@ class Orchestrator:
                 agent_id=agent_id,
                 memory_dir=memory_dir,
                 ollama_client=self.ollama,
+                model_registry=self.model_registry,
             )
 
             task = {
