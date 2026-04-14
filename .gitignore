@@ -64,4 +64,3 @@ htmlcov/
 !package.json
 
 **/*.log
-**/reports/

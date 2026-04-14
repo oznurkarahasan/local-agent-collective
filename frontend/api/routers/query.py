@@ -2,9 +2,9 @@
 Query router — ask questions about loaded documents and code.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from frontend.api.dependencies import get_rag_agent, get_coder_agent
+from frontend.api.dependencies import get_orchestrator
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -15,33 +15,32 @@ class QueryRequest(BaseModel):
 
 
 @router.post("")
-async def query(request: QueryRequest):
+async def query(request: QueryRequest, orchestrator=Depends(get_orchestrator)):
     """Ask a question about loaded files."""
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    results = {}
+    prompt = request.question
+    if request.target != "auto":
+        prompt = f"[Focus on {request.target}] {prompt}"
 
-    if request.target in ("auto", "documents", "both"):
-        rag = get_rag_agent()
-        rag_result = await rag.run({"type": "query", "input": request.question})
-        if rag_result["success"] and isinstance(rag_result["output"], dict):
-            results["documents"] = rag_result["output"]
+    result = await orchestrator.run(user_input=prompt)
 
-    if request.target in ("auto", "code", "both"):
-        coder = get_coder_agent()
-        coder_result = await coder.run({"type": "query", "input": request.question})
-        if coder_result["success"] and isinstance(coder_result["output"], dict):
-            results["code"] = coder_result["output"]
-
-    if not results:
+    if not result.get("success"):
         return {
             "question": request.question,
             "results": {},
-            "message": "No relevant content found.",
+            "message": result.get(
+                "error", "Orchestrator failed to process the request."
+            ),
         }
 
     return {
         "question": request.question,
-        "results": results,
+        "results": {
+            "orchestrator": {
+                "report": result.get("report"),
+                "plan": result.get("plan"),
+            }
+        },
     }

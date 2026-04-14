@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Indis.ai — Independent Intelligence</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -26,8 +31,9 @@
 
     header h1 {
       font-size: 1.2rem;
-      font-weight: 600;
-      color: #a78bfa;
+      font-weight: 700;
+      color: #fb923c;
+      letter-spacing: -0.02em;
     }
 
     header span {
@@ -50,9 +56,17 @@
       margin-right: 4px;
     }
 
-    .dot-green { background: #22c55e; }
-    .dot-red   { background: #ef4444; }
-    .dot-gray  { background: #666; }
+    .dot-green {
+      background: #22c55e;
+    }
+
+    .dot-red {
+      background: #ef4444;
+    }
+
+    .dot-gray {
+      background: #666;
+    }
 
     main {
       display: flex;
@@ -69,6 +83,16 @@
       padding: 16px;
       gap: 16px;
       overflow-y: auto;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s, opacity 0.2s;
+    }
+
+    aside.collapsed {
+      width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      opacity: 0;
+      pointer-events: none;
+      border-right: none;
     }
 
     aside h2 {
@@ -89,10 +113,20 @@
       color: #888;
     }
 
-    #upload-area:hover { border-color: #a78bfa; color: #a78bfa; }
-    #upload-area input { display: none; }
+    #upload-area:hover {
+      border-color: #fb923c;
+      color: #fb923c;
+    }
 
-    #file-list { display: flex; flex-direction: column; gap: 6px; }
+    #upload-area input {
+      display: none;
+    }
+
+    #file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
     .file-item {
       background: #1a1a24;
@@ -111,8 +145,15 @@
       font-weight: 600;
     }
 
-    .badge-code { background: #1e3a5f; color: #60a5fa; }
-    .badge-doc  { background: #1e3d2f; color: #4ade80; }
+    .badge-code {
+      background: #1e3a5f;
+      color: #60a5fa;
+    }
+
+    .badge-doc {
+      background: #1e3d2f;
+      color: #4ade80;
+    }
 
     /* Chat area */
     #chat-area {
@@ -138,7 +179,8 @@
 
     .msg-user {
       align-self: flex-end;
-      background: #2d1f6e;
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.3);
       border-radius: 12px 12px 2px 12px;
       padding: 10px 16px;
       font-size: 0.9rem;
@@ -152,7 +194,9 @@
       font-size: 0.88rem;
     }
 
-    .msg-assistant .answer-block { margin-bottom: 10px; }
+    .msg-assistant .answer-block {
+      margin-bottom: 10px;
+    }
 
     .msg-assistant .source-line {
       font-size: 0.76rem;
@@ -166,7 +210,27 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       margin-bottom: 6px;
-      color: #a78bfa;
+      color: #fb923c;
+    }
+
+    #toggle-sidebar-btn {
+      background: transparent;
+      border: 1px solid #3a3a4a;
+      color: #888;
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    #toggle-sidebar-btn:hover {
+      border-color: #fb923c;
+      color: #fb923c;
+      background: rgba(251, 146, 60, 0.05);
     }
 
     .msg-section-label {
@@ -202,10 +266,12 @@
       transition: border-color 0.2s;
     }
 
-    #question-input:focus { border-color: #a78bfa; }
+    #question-input:focus {
+      border-color: #fb923c;
+    }
 
     #send-btn {
-      background: #7c3aed;
+      background: #f97316;
       color: white;
       border: none;
       border-radius: 8px;
@@ -216,8 +282,14 @@
       transition: background 0.2s;
     }
 
-    #send-btn:hover { background: #6d28d9; }
-    #send-btn:disabled { background: #3a2a5a; cursor: not-allowed; }
+    #send-btn:hover {
+      background: #ea580c;
+    }
+
+    #send-btn:disabled {
+      background: #432a1a;
+      cursor: not-allowed;
+    }
 
     #upload-status {
       font-size: 0.8rem;
@@ -232,245 +304,249 @@
       margin-top: 60px;
     }
 
-    .welcome h2 { font-size: 1.4rem; color: #666; margin-bottom: 8px; }
-    .welcome p  { font-size: 0.88rem; }
+    .welcome h2 {
+      font-size: 1.4rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .welcome p {
+      font-size: 0.88rem;
+    }
   </style>
 </head>
+
 <body>
 
-<header>
-  <h1>Indis.ai</h1>
-  <span>Independent Intelligence</span>
-  <div id="status-bar">
-    <span id="ollama-status"><span class="status-dot dot-gray"></span>Ollama</span>
-    <span id="rag-status"><span class="status-dot dot-gray"></span>RAG</span>
-    <span id="coder-status"><span class="status-dot dot-gray"></span>Coder</span>
-  </div>
-</header>
-
-<main>
-  <aside>
-    <h2>Files</h2>
-
-    <div id="upload-area" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" accept=".pdf,.txt,.md,.docx,.py,.js,.ts,.go,.rs,.cpp,.c,.java" />
-      <div>⬆ Upload file</div>
-      <div style="font-size:0.75rem;margin-top:4px">PDF, TXT, MD, DOCX, PY, JS...</div>
+  <header>
+    <button id="toggle-sidebar-btn" onclick="toggleSidebar()">
+      <span id="toggle-icon">📁</span> Files
+    </button>
+    <h1 style="margin-left: 12px;">Indis.ai</h1>
+    <span>Independent Intelligence</span>
+    <div id="status-bar">
+      <span id="ollama-status"><span class="status-dot dot-gray"></span>Ollama</span>
+      <span id="rag-status"><span class="status-dot dot-gray"></span>RAG</span>
+      <span id="coder-status"><span class="status-dot dot-gray"></span>Coder</span>
     </div>
+  </header>
 
-    <div id="upload-status"></div>
-    <div id="file-list"></div>
-  </aside>
+  <main>
+    <aside class="collapsed" id="sidebar">
+      <h2>Files</h2>
 
-  <div id="chat-area">
-    <div id="messages">
-      <div class="welcome">
-        <h2>Welcome to Indis.ai</h2>
-        <p>Upload a document or code file, then ask questions about it.</p>
+      <div id="upload-area" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept=".pdf,.txt,.md,.docx,.py,.js,.ts,.go,.rs,.cpp,.c,.java" />
+        <div>⬆ Upload file</div>
+        <div style="font-size:0.75rem;margin-top:4px">PDF, TXT, MD, DOCX, PY, JS...</div>
+      </div>
+
+      <div id="upload-status"></div>
+      <div id="file-list"></div>
+    </aside>
+
+    <div id="chat-area">
+      <div id="messages">
+        <div class="welcome">
+          <h2>Welcome to Indis.ai</h2>
+          <p>Upload a document or code file, then ask questions about it.</p>
+        </div>
+      </div>
+
+      <div id="input-row">
+        <input type="text" id="question-input" placeholder="Ask a question about your files..." autocomplete="off" />
+        <button id="send-btn" onclick="sendQuestion()">Ask</button>
       </div>
     </div>
+  </main>
 
-    <div id="input-row">
-      <input
-        type="text"
-        id="question-input"
-        placeholder="Ask a question about your files..."
-        autocomplete="off"
-      />
-      <button id="send-btn" onclick="sendQuestion()">Ask</button>
-    </div>
-  </div>
-</main>
+  <script>
+    const API = '';
 
-<script>
-  const API = '';
+    // --- Status ---
+    async function loadStatus() {
+      try {
+        const res = await fetch(`${API}/status`);
+        const data = await res.json();
 
-  // --- Status ---
-  async function loadStatus() {
-    try {
-      const res = await fetch(`${API}/status`);
-      const data = await res.json();
-
-      setStatus('ollama-status', 'Ollama', data.ollama);
-      setStatus('rag-status', 'RAG', data.agents?.rag_agent?.ready);
-      setStatus('coder-status', 'Coder', data.agents?.coder_agent?.ready);
-    } catch {
-      setStatus('ollama-status', 'Ollama', false);
-    }
-  }
-
-  function setStatus(id, label, ok) {
-    const el = document.getElementById(id);
-    const cls = ok ? 'dot-green' : 'dot-red';
-    el.innerHTML = `<span class="status-dot ${cls}"></span>${label}`;
-  }
-
-  // --- File Upload ---
-  document.getElementById('file-input').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const statusEl = document.getElementById('upload-status');
-    statusEl.style.color = '#a78bfa';
-    statusEl.textContent = `Uploading ${file.name}...`;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res = await fetch(`${API}/documents/load`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        statusEl.style.color = '#22c55e';
-        statusEl.textContent = `✓ ${file.name} loaded (${data.chunks_stored} chunks)`;
-        addFileToList(data);
-        loadStatus();
-      } else {
-        statusEl.style.color = '#ef4444';
-        statusEl.textContent = `✗ ${data.detail}`;
+        setStatus('ollama-status', 'Ollama', data.ollama);
+        setStatus('rag-status', 'RAG', data.agents?.rag_agent?.ready);
+        setStatus('coder-status', 'Coder', data.agents?.coder_agent?.ready);
+      } catch {
+        setStatus('ollama-status', 'Ollama', false);
       }
-    } catch (err) {
-      statusEl.style.color = '#ef4444';
-      statusEl.textContent = `✗ Upload failed`;
     }
 
-    e.target.value = '';
-  });
-
-  function addFileToList(data) {
-    const list = document.getElementById('file-list');
-    const isCode = data.agent === 'coder_agent';
-    const badge = isCode
-      ? `<span class="file-badge badge-code">${data.language || 'code'}</span>`
-      : `<span class="file-badge badge-doc">doc</span>`;
-
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.innerHTML = `${badge} ${data.filename}`;
-    list.appendChild(item);
-  }
-
-  async function loadFileList() {
-    try {
-      const res = await fetch(`${API}/documents`);
-      const data = await res.json();
-      data.files.forEach(addFileToList);
-    } catch {}
-  }
-
-  // --- Query ---
-  async function sendQuestion() {
-    const input = document.getElementById('question-input');
-    const question = input.value.trim();
-    if (!question) return;
-
-    input.value = '';
-    addMessage('user', question);
-
-    const thinking = addMessage('thinking', 'Thinking...');
-    document.getElementById('send-btn').disabled = true;
-
-    try {
-      const res = await fetch(`${API}/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, target: 'auto' }),
-      });
-      const data = await res.json();
-      thinking.remove();
-      renderAnswer(data);
-    } catch (err) {
-      thinking.remove();
-      addMessage('assistant', 'Error: could not reach the server.');
+    function setStatus(id, label, ok) {
+      const el = document.getElementById(id);
+      const cls = ok ? 'dot-green' : 'dot-red';
+      el.innerHTML = `<span class="status-dot ${cls}"></span>${label}`;
     }
 
-    document.getElementById('send-btn').disabled = false;
-  }
+    // --- File Upload ---
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-  function renderAnswer(data) {
-    const messages = document.getElementById('messages');
-    const div = document.createElement('div');
-    div.className = 'msg msg-assistant';
+      const statusEl = document.getElementById('upload-status');
+      statusEl.style.color = '#fb923c';
+      statusEl.textContent = `Uploading ${file.name}...`;
 
-    const label = document.createElement('div');
-    label.className = 'msg-label';
-    label.textContent = 'Indis.ai';
-    div.appendChild(label);
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const results = data.results || {};
+      try {
+        const res = await fetch(`${API}/documents/load`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
 
-    if (Object.keys(results).length === 0) {
-      const p = document.createElement('p');
-      p.textContent = data.message || 'No relevant content found.';
-      div.appendChild(p);
-    } else {
-      for (const [key, val] of Object.entries(results)) {
-        if (Object.keys(results).length > 1) {
-          const lbl = document.createElement('div');
-          lbl.className = 'msg-section-label';
-          lbl.textContent = key === 'code' ? '⌨ Code' : '📄 Documents';
-          div.appendChild(lbl);
+        if (res.ok) {
+          statusEl.style.color = '#22c55e';
+          statusEl.textContent = `✓ ${file.name} loaded (${data.chunks_stored} chunks)`;
+          addFileToList(data);
+          loadStatus();
+        } else {
+          statusEl.style.color = '#ef4444';
+          statusEl.textContent = `✗ ${data.detail}`;
         }
+      } catch (err) {
+        statusEl.style.color = '#ef4444';
+        statusEl.textContent = `✗ Upload failed`;
+      }
 
+      e.target.value = '';
+    });
+
+    function addFileToList(data) {
+      const list = document.getElementById('file-list');
+      const isCode = data.agent === 'coder_agent';
+      const badge = isCode
+        ? `<span class="file-badge badge-code">${data.language || 'code'}</span>`
+        : `<span class="file-badge badge-doc">doc</span>`;
+
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `${badge} ${data.filename}`;
+      list.appendChild(item);
+    }
+
+    async function loadFileList() {
+      try {
+        const res = await fetch(`${API}/documents`);
+        const data = await res.json();
+        data.files.forEach(addFileToList);
+      } catch { }
+    }
+
+    // --- Query ---
+    async function sendQuestion() {
+      const input = document.getElementById('question-input');
+      const question = input.value.trim();
+      if (!question) return;
+
+      input.value = '';
+      addMessage('user', question);
+
+      const thinking = addMessage('thinking', 'Thinking...');
+      document.getElementById('send-btn').disabled = true;
+
+      try {
+        const res = await fetch(`${API}/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, target: 'auto' }),
+        });
+        const data = await res.json();
+        thinking.remove();
+        renderAnswer(data);
+      } catch (err) {
+        thinking.remove();
+        addMessage('assistant', 'Error: could not reach the server.');
+      }
+
+      document.getElementById('send-btn').disabled = false;
+    }
+
+    function renderAnswer(data) {
+      const messages = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'msg msg-assistant';
+
+      const label = document.createElement('div');
+      label.className = 'msg-label';
+      label.textContent = 'Indis.ai';
+      div.appendChild(label);
+
+      const orch = data.results?.orchestrator;
+
+      if (!orch || !orch.report) {
+        const p = document.createElement('p');
+        p.textContent = data.message || 'No relevant content found.';
+        div.appendChild(p);
+      } else {
         const block = document.createElement('div');
         block.className = 'answer-block';
         block.style.whiteSpace = 'pre-wrap';
-        block.textContent = val.answer;
+        block.textContent = orch.report;
         div.appendChild(block);
+      }
 
-        if (val.sources?.length) {
-          const src = document.createElement('div');
-          src.className = 'source-line';
-          src.textContent = 'Sources: ' + val.sources.map(s => s.split('/').pop()).join(', ');
-          div.appendChild(src);
-        }
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addMessage(type, text) {
+      const messages = document.getElementById('messages');
+
+      // Remove welcome message
+      const welcome = messages.querySelector('.welcome');
+      if (welcome) welcome.remove();
+
+      const div = document.createElement('div');
+
+      if (type === 'user') {
+        div.className = 'msg msg-user';
+        div.textContent = text;
+      } else if (type === 'thinking') {
+        div.className = 'thinking';
+        div.textContent = text;
+      } else {
+        div.className = 'msg msg-assistant';
+        div.textContent = text;
+      }
+
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    // Enter key
+    document.getElementById('question-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendQuestion();
+      }
+    });
+
+    // --- Sidebar Toggle ---
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const icon = document.getElementById('toggle-icon');
+      sidebar.classList.toggle('collapsed');
+
+      if (sidebar.classList.contains('collapsed')) {
+        icon.textContent = '📁';
+      } else {
+        icon.textContent = '📂';
       }
     }
 
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function addMessage(type, text) {
-    const messages = document.getElementById('messages');
-
-    // Remove welcome message
-    const welcome = messages.querySelector('.welcome');
-    if (welcome) welcome.remove();
-
-    const div = document.createElement('div');
-
-    if (type === 'user') {
-      div.className = 'msg msg-user';
-      div.textContent = text;
-    } else if (type === 'thinking') {
-      div.className = 'thinking';
-      div.textContent = text;
-    } else {
-      div.className = 'msg msg-assistant';
-      div.textContent = text;
-    }
-
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-    return div;
-  }
-
-  // Enter key
-  document.getElementById('question-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendQuestion();
-    }
-  });
-
-  // Init
-  loadStatus();
-  loadFileList();
-</script>
+    // Init
+    loadStatus();
+    loadFileList();
+  </script>
 </body>
+
 </html>
