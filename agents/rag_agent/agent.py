@@ -23,6 +23,8 @@ from backend.core.ollama_client import OllamaClient
 from backend.core.platform_utils import PlatformUtils
 from backend.core.model_registry import ModelRegistry
 
+CHROMA_TELEMETRY_IMPL = "backend.core.chroma_telemetry.NoOpProductTelemetry"
+
 
 class RagAgent(AgentBase):
     """
@@ -63,7 +65,12 @@ class RagAgent(AgentBase):
         self.chroma_dir = chroma_dir
 
         self.chroma_client = chromadb.PersistentClient(
-            path=str(chroma_dir), settings=chromadb.Settings(anonymized_telemetry=False)
+            path=str(chroma_dir),
+            settings=chromadb.Settings(
+                anonymized_telemetry=False,
+                chroma_product_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+                chroma_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+            ),
         )
         self.collection = self.chroma_client.get_or_create_collection(
             name="rag_agent_docs",
@@ -116,8 +123,15 @@ class RagAgent(AgentBase):
 
     # --- Document Loading ---
 
-    async def _handle_load_document(self, file_path: str) -> dict:
+    async def _handle_load_document(self, file_input: str | dict) -> dict:
         """Load a document and store its embeddings in ChromaDB."""
+        source_name = None
+        if isinstance(file_input, dict):
+            file_path = str(file_input.get("path", ""))
+            source_name = file_input.get("source_name")
+        else:
+            file_path = str(file_input)
+
         path = Path(file_path)
 
         if not path.exists():
@@ -137,12 +151,16 @@ class RagAgent(AgentBase):
             }
 
         # Embed and store
-        stored_count = await self.embed_and_store(chunks, source=str(path))
+        stored_count = await self.embed_and_store(
+            chunks,
+            source=str(path),
+            source_name=source_name,
+        )
 
         return {
             "success": True,
             "output": {
-                "file": str(path),
+                "file": source_name or str(path),
                 "chunks_stored": stored_count,
             },
         }
@@ -193,7 +211,12 @@ class RagAgent(AgentBase):
         )
         return splitter.split_documents(docs)
 
-    async def embed_and_store(self, chunks: list, source: str) -> int:
+    async def embed_and_store(
+        self,
+        chunks: list,
+        source: str,
+        source_name: Optional[str] = None,
+    ) -> int:
         """
         Embed chunks and store in ChromaDB.
 
@@ -206,7 +229,11 @@ class RagAgent(AgentBase):
         """
         texts = [chunk.page_content for chunk in chunks]
         ids = [f"{source}__chunk_{i}" for i in range(len(texts))]
-        metadatas = [{"source": source, "chunk_index": i} for i in range(len(texts))]
+        display_source = source_name or source
+        metadatas = [
+            {"source": display_source, "chunk_index": i}
+            for i in range(len(texts))
+        ]
 
         # Generate embeddings
         embeddings = []

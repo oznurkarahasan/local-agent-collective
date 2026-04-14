@@ -17,6 +17,8 @@ from backend.core.ollama_client import OllamaClient
 from backend.core.platform_utils import PlatformUtils
 from backend.core.model_registry import ModelRegistry
 
+CHROMA_TELEMETRY_IMPL = "backend.core.chroma_telemetry.NoOpProductTelemetry"
+
 
 # Supported file extensions
 SUPPORTED_EXTENSIONS = {
@@ -87,7 +89,11 @@ class CoderAgent(AgentBase):
 
         self.chroma_client = chromadb.PersistentClient(
             path=str(chroma_dir),
-            settings=chromadb.Settings(anonymized_telemetry=False),
+            settings=chromadb.Settings(
+                anonymized_telemetry=False,
+                chroma_product_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+                chroma_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+            ),
         )
         self.collection = self.chroma_client.get_or_create_collection(
             name="coder_agent_docs",
@@ -138,8 +144,15 @@ class CoderAgent(AgentBase):
 
     # --- Code Loading ---
 
-    async def _handle_load_code(self, file_path: str) -> dict:
+    async def _handle_load_code(self, file_input: str | dict) -> dict:
         """Load a code file and store its embeddings in ChromaDB."""
+        source_name = None
+        if isinstance(file_input, dict):
+            file_path = str(file_input.get("path", ""))
+            source_name = file_input.get("source_name")
+        else:
+            file_path = str(file_input)
+
         path = Path(file_path)
 
         if not path.exists():
@@ -160,13 +173,16 @@ class CoderAgent(AgentBase):
 
         # Embed and store
         stored_count = await self.embed_and_store(
-            chunks, source=str(path), language=LANGUAGE_MAP.get(path.suffix, "text")
+            chunks,
+            source=str(path),
+            source_name=source_name,
+            language=LANGUAGE_MAP.get(path.suffix, "text"),
         )
 
         return {
             "success": True,
             "output": {
-                "file": str(path),
+                "file": source_name or str(path),
                 "language": LANGUAGE_MAP.get(path.suffix, "text"),
                 "chunks_stored": stored_count,
             },
@@ -229,7 +245,11 @@ class CoderAgent(AgentBase):
         return splitter.split_text(code_text)
 
     async def embed_and_store(
-        self, chunks: list[str], source: str, language: str = "text"
+        self,
+        chunks: list[str],
+        source: str,
+        source_name: Optional[str] = None,
+        language: str = "text",
     ) -> int:
         """
         Embed code chunks and store in ChromaDB.
@@ -243,9 +263,10 @@ class CoderAgent(AgentBase):
             Number of chunks stored.
         """
         ids = [f"{source}__chunk_{i}" for i in range(len(chunks))]
+        display_source = source_name or source
         metadatas = [
             {
-                "source": source,
+                "source": display_source,
                 "chunk_index": i,
                 "language": language,
             }

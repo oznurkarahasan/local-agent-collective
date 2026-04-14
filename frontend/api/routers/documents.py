@@ -49,7 +49,10 @@ async def load_document(file: UploadFile = File(...), orchestrator=Depends(get_o
                     "id": 1,
                     "agent": agent_name,
                     "task_type": task_type,
-                    "input": str(tmp_path),
+                    "input": {
+                        "path": str(tmp_path),
+                        "source_name": file.filename,
+                    },
                     "depends_on": []
                 }
             ]
