@@ -53,3 +53,14 @@ htmlcov/
 # Environment variables
 .env
 .env.local
+
+# --- Deep Memory & Data Protection ---
+**/memory/
+**/data/
+
+**/*.json
+!**/config/*.json
+!**/manifest.json
+!package.json
+
+**/*.log

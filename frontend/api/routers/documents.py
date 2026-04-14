@@ -6,10 +6,9 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from frontend.api.dependencies import (
-    get_rag_agent,
-    get_coder_agent,
+    get_orchestrator,
     CODE_EXTENSIONS,
     DOC_EXTENSIONS,
 )
@@ -21,7 +20,9 @@ _loaded_files: list[dict] = []
 
 
 @router.post("/load")
-async def load_document(file: UploadFile = File(...)):
+async def load_document(
+    file: UploadFile = File(...), orchestrator=Depends(get_orchestrator)
+):
     """Upload and load a document or code file."""
     suffix = Path(file.filename).suffix.lower()
 
@@ -41,25 +42,40 @@ async def load_document(file: UploadFile = File(...)):
         tmp_path = Path(tmp.name)
 
     try:
-        if suffix in CODE_EXTENSIONS:
-            agent = get_coder_agent()
-            task_type = "load_code"
-            agent_name = "coder_agent"
-        else:
-            agent = get_rag_agent()
-            task_type = "load_document"
-            agent_name = "rag_agent"
+        agent_name = "coder_agent" if suffix in CODE_EXTENSIONS else "rag_agent"
+        task_type = "load_code" if suffix in CODE_EXTENSIONS else "load_document"
 
-        result = await agent.run({"type": task_type, "input": str(tmp_path)})
+        plan = {
+            "steps": [
+                {
+                    "id": 1,
+                    "agent": agent_name,
+                    "task_type": task_type,
+                    "input": {
+                        "path": str(tmp_path),
+                        "source_name": file.filename,
+                    },
+                    "depends_on": [],
+                }
+            ]
+        }
 
-        if not result["success"]:
+        step_results = await orchestrator._execute_plan(plan)
+        result = (
+            step_results[0]
+            if step_results
+            else {"success": False, "error": "Execution failed"}
+        )
+
+        if not result.get("success"):
             raise HTTPException(
                 status_code=500,
                 detail=result.get("error", "Failed to load file"),
             )
 
-        chunks = result["output"].get("chunks_stored", 0)
-        language = result["output"].get("language", "")
+        output = result.get("output") or {}
+        chunks = output.get("chunks_stored", 0)
+        language = output.get("language", "")
 
         entry = {
             "filename": file.filename,

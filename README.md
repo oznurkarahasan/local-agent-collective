@@ -81,23 +81,25 @@ Models use **lazy loading**: a model is loaded only when needed and unloaded imm
 
 | Model | Role | Size | When Active |
 |-------|------|------|-------------|
-| `deepseek-r1:7b` | Orchestration, task planning | ~4.7GB | Task analysis and final report |
-| `qwen3:4b` | RAG, multilingual queries | ~2.5GB | Text/PDF queries |
-| `qwen2.5-coder:3b` | Code analysis and generation | ~1.9GB | Code file tasks |
+| `gemma4:e4b` | Orchestration, planning, CEO | ~5.0GB | Task analysis and final report |
+| `deepseek-coder:7b` | Code analysis, generation, reasoning | ~4.5GB | Code file tasks |
+| `phi3.5:moe` | Research, analysis, reasoning | ~4.0GB | General reasoning tasks |
+| `llama3.2:3b` | RAG, documentation, doc_analysis | ~2.0GB | Text/PDF queries |
+| `qwen2.5:1.5b` | QA, quality control, validation | ~1.2GB | Validation tasks |
 | `nomic-embed-text:v1.5` | Embedding | ~274MB | Every document load |
 
 ### Task Flow
 ```
 User submits task
         │
-DeepSeek LOADS → analyzes task → produces plan JSON → UNLOADS
+Gemma LOADS → analyzes task → produces plan JSON → UNLOADS
         │
         ├── Independent steps → run in parallel (Semaphore controlled)
         └── Dependent steps  → run sequentially (depends_on)
         │
 Results collected
         │
-DeepSeek LOADS → writes final report → UNLOADS → returned to user
+Gemma LOADS → writes final report → UNLOADS → returned to user
 ```
 
 ---
@@ -158,9 +160,11 @@ The registry auto-discovers the folder and the orchestrator uses it automaticall
 
 | Model | VRAM (Q4) | Fits in 4GB | Fits in 8GB |
 |-------|-----------|-------------|-------------|
-| `deepseek-r1:7b` | ~4.7 GB | ⚠️ Tight | ✅ Yes |
-| `qwen3:4b` | ~2.5 GB | ✅ Yes | ✅ Yes |
-| `qwen2.5-coder:3b` | ~1.9 GB | ✅ Yes | ✅ Yes |
+| `gemma4:e4b` | ~5.0 GB | ❌ No | ✅ Yes |
+| `deepseek-coder:7b` | ~4.5 GB | ⚠️ Tight | ✅ Yes |
+| `phi3.5:moe` | ~4.0 GB | ⚠️ Tight | ✅ Yes |
+| `llama3.2:3b` | ~2.0 GB | ✅ Yes | ✅ Yes |
+| `qwen2.5:1.5b` | ~1.2 GB | ✅ Yes | ✅ Yes |
 | `nomic-embed-text:v1.5` | ~274 MB | ✅ Yes | ✅ Yes |
 
 > **Note:** Models use lazy loading — only the active model is loaded into VRAM at a time.
@@ -322,6 +326,30 @@ sudo docker run --rm -v $(pwd):/app local-agent-collective:test pytest tests/ -v
 ## example: run before commit your current file
 sudo docker run --rm -v $(pwd):/app local-agent-collective:test black backend/core/model_registry.py
 sudo docker run --rm -v $(pwd):/app local-agent-collective:test flake8 backend/core/agent_base.py --max-line-length=100
+```
+
+## for the model downloading
+
+```bash
++ ollama pull gemma4:e4b
+
++ ollama pull qwen2.5-coder:3b
+
++ ollama pull nomic-embed-text:v1.5
++ ollama pull llama3.2:3b
+
++ ollama pull deepseek-r1:1.5b
++ ollama pull phi3.5:latest
+
+# start docker
+sudo systemctl start docker
+
+# to docker volume
+docker exec -it local-agent-ollama ollama pull gemma4:e4b
+docker exec -it local-agent-ollama ollama run gemma4:e4b
+
+# run in web
+PYTHONPATH=. .venv/bin/uvicorn frontend.api.main:app --host 0.0.0.0 --port 8000
 ```
 
 > **"Your data stays with you."**

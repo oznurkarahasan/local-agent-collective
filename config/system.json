@@ -1,8 +1,8 @@
 {
   "orchestration": {
-    "max_concurrent": 2,
+    "max_concurrent": 1,
     "keep_alive": "0",
-    "task_timeout_seconds": 300
+    "task_timeout_seconds": 600
   },
   "ollama": {
     "base_url": "http://localhost:11434",
@@ -10,14 +10,14 @@
     "retry_delay_seconds": 2
   },
   "memory": {
-    "max_errors_per_agent": 100,
-    "max_skills_per_agent": 50,
-    "training_sample_queue_limit": 500
+    "max_errors_per_agent": 50,
+    "max_skills_per_agent": 30,
+    "training_sample_queue_limit": 1000
   },
   "rag": {
-    "chunk_size": 512,
-    "chunk_overlap": 64,
-    "top_k_results": 5
+    "chunk_size": 1024,
+    "chunk_overlap": 128,
+    "top_k_results": 4
   },
   "logging": {
     "level": "INFO",

@@ -124,20 +124,26 @@ async def test_no_training_sample_on_failure(agent):
     assert len(data["candidates"]) == 0
 
 
-# --- Preloaded errors ---
-
 def test_preloaded_errors_in_memory(tmp_path, mock_ollama, mock_collection):
-    import shutil
-    real_errors = (
-        Path(__file__).parent.parent.parent
-        / "agents"
-        / "coder_agent"
-        / "memory"
-        / "errors.json"
-    )
+    import json
+    from pathlib import Path
+
     memory_dir = tmp_path / "memory"
     memory_dir.mkdir()
-    shutil.copy(real_errors, memory_dir / "errors.json")
+    error_file = memory_dir / "errors.json"
+    
+    mock_data = {
+        "errors": [
+            {"error_type": "FileNotFoundError", "task_type": "load_code", "context": "missing file"},
+            {"error_type": "UnicodeDecodeError", "task_type": "load_code", "context": "bad encoding"},
+            {"error_type": "SyntaxError", "task_type": "coding", "context": "bad python"},
+            {"error_type": "TypeError", "task_type": "coding", "context": "none type"},
+            {"error_type": "ValueError", "task_type": "coding", "context": "invalid value"}
+        ]
+    }
+    
+    with open(error_file, "w") as f:
+        json.dump(mock_data, f)
 
     with patch("chromadb.PersistentClient") as mock_chroma:
         mock_chroma.return_value.get_or_create_collection.return_value = (
@@ -148,7 +154,6 @@ def test_preloaded_errors_in_memory(tmp_path, mock_ollama, mock_collection):
             ollama_client=mock_ollama,
             chroma_dir=tmp_path / "chroma",
         )
-
     errors = coder.memory.get_errors()
     assert len(errors) == 5
     error_types = [e["error_type"] for e in errors]

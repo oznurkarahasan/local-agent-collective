@@ -15,6 +15,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from backend.core.agent_base import AgentBase
 from backend.core.ollama_client import OllamaClient
 from backend.core.platform_utils import PlatformUtils
+from backend.core.model_registry import ModelRegistry
+
+CHROMA_TELEMETRY_IMPL = "backend.core.chroma_telemetry.NoOpProductTelemetry"
 
 
 # Supported file extensions
@@ -62,6 +65,7 @@ class CoderAgent(AgentBase):
         ollama_client: Optional[OllamaClient] = None,
         chroma_dir: Optional[Path] = None,
         config_path: Optional[Path] = None,
+        model_registry: Optional[ModelRegistry] = None,
     ):
         if memory_dir is None:
             memory_dir = Path(__file__).parent / "memory"
@@ -70,6 +74,7 @@ class CoderAgent(AgentBase):
             agent_id=agent_id,
             memory_dir=memory_dir,
             ollama_client=ollama_client,
+            model_registry=model_registry,
         )
 
         # Load agent config
@@ -84,7 +89,11 @@ class CoderAgent(AgentBase):
 
         self.chroma_client = chromadb.PersistentClient(
             path=str(chroma_dir),
-            settings=chromadb.Settings(anonymized_telemetry=False),
+            settings=chromadb.Settings(
+                anonymized_telemetry=False,
+                chroma_product_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+                chroma_telemetry_impl=CHROMA_TELEMETRY_IMPL,
+            ),
         )
         self.collection = self.chroma_client.get_or_create_collection(
             name="coder_agent_docs",
@@ -96,9 +105,13 @@ class CoderAgent(AgentBase):
         self.chunk_overlap = 64
         self.top_k = 5
 
-        # Models
-        self.embed_model = "nomic-embed-text:v1.5"
-        self.chat_model = "qwen2.5-coder:3b"
+        # Models — resolve via registry
+        self.embed_model = self.get_model_id_for_role(
+            "embedding", default="nomic-embed-text:v1.5"
+        )
+        self.chat_model = self.get_model_id_for_role(
+            "code_analysis", default="qwen2.5-coder:3b"
+        )
 
     def _load_config(self, config_path: Path) -> dict:
         """Load agent configuration from config.json."""
@@ -122,29 +135,29 @@ class CoderAgent(AgentBase):
 
         Supported types:
         - load_code: {"type": "load_code", "input": "/path/to/file.py"}
-        - query: {"type": "query", "input": "your question"}
+        - anything else defaults to: query {"type": "...", "input": "your question"}
         """
         task_type = task.get("type")
         task_input = task.get("input", "")
 
         if task_type == "load_code":
             return await self._handle_load_code(task_input)
-        elif task_type == "query":
-            return await self._handle_query(task_input)
         else:
-            return {
-                "success": False,
-                "output": None,
-                "error": (
-                    f"Unknown task type: '{task_type}'. "
-                    "Supported: 'load_code', 'query'"
-                ),
-            }
+            # The LLM planner might generate task types like 'code_explanation'
+            # based on capabilities.
+            return await self._handle_query(task_input)
 
     # --- Code Loading ---
 
-    async def _handle_load_code(self, file_path: str) -> dict:
+    async def _handle_load_code(self, file_input: str | dict) -> dict:
         """Load a code file and store its embeddings in ChromaDB."""
+        source_name = None
+        if isinstance(file_input, dict):
+            file_path = str(file_input.get("path", ""))
+            source_name = file_input.get("source_name")
+        else:
+            file_path = str(file_input)
+
         path = Path(file_path)
 
         if not path.exists():
@@ -165,13 +178,16 @@ class CoderAgent(AgentBase):
 
         # Embed and store
         stored_count = await self.embed_and_store(
-            chunks, source=str(path), language=LANGUAGE_MAP.get(path.suffix, "text")
+            chunks,
+            source=str(path),
+            source_name=source_name,
+            language=LANGUAGE_MAP.get(path.suffix, "text"),
         )
 
         return {
             "success": True,
             "output": {
-                "file": str(path),
+                "file": source_name or str(path),
                 "language": LANGUAGE_MAP.get(path.suffix, "text"),
                 "chunks_stored": stored_count,
             },
@@ -234,7 +250,11 @@ class CoderAgent(AgentBase):
         return splitter.split_text(code_text)
 
     async def embed_and_store(
-        self, chunks: list[str], source: str, language: str = "text"
+        self,
+        chunks: list[str],
+        source: str,
+        source_name: Optional[str] = None,
+        language: str = "text",
     ) -> int:
         """
         Embed code chunks and store in ChromaDB.
@@ -248,9 +268,10 @@ class CoderAgent(AgentBase):
             Number of chunks stored.
         """
         ids = [f"{source}__chunk_{i}" for i in range(len(chunks))]
+        display_source = source_name or source
         metadatas = [
             {
-                "source": source,
+                "source": display_source,
                 "chunk_index": i,
                 "language": language,
             }
@@ -316,11 +337,15 @@ class CoderAgent(AgentBase):
         Returns:
             List of dicts with 'text', 'source', 'language' keys.
         """
+        collection_count = self.collection.count()
+        if collection_count == 0:
+            return []
+
         question_vector = await self.ollama.embed(model=self.embed_model, text=question)
 
         results = self.collection.query(
             query_embeddings=[question_vector],
-            n_results=min(self.top_k, self.collection.count()),
+            n_results=min(self.top_k, collection_count),
             include=["documents", "metadatas"],
         )
 

@@ -190,10 +190,10 @@ async def test_generate_answer_uses_coder_model(agent):
 # --- _execute ---
 
 @pytest.mark.asyncio
-async def test_execute_unknown_task_type(agent):
+async def test_execute_unknown_task_type_falls_back_to_query(agent):
     result = await agent._execute({"type": "unknown", "input": "test"})
-    assert result["success"] is False
-    assert "Unknown task type" in result["error"]
+    assert result["success"] is True
+    assert "answer" in result["output"]
 
 
 @pytest.mark.asyncio

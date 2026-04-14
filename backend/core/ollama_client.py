@@ -134,13 +134,19 @@ class OllamaClient:
         response = await self._request("POST", "/api/chat", payload)
         return response.get("message", {}).get("content", "")
 
-    async def embed(self, model: str, text: str) -> list[float]:
+    async def embed(
+        self,
+        model: str,
+        text: str,
+        keep_alive: Optional[str] = None,
+    ) -> list[float]:
         """
         Generate embeddings for the given text.
 
         Args:
             model: Embedding model e.g. 'nomic-embed-text:v1.5'
             text: Text to embed
+            keep_alive: How long to keep model in memory.
 
         Returns:
             Embedding vector as list of floats.
@@ -150,6 +156,9 @@ class OllamaClient:
             OllamaModelError: If embedding fails.
         """
         payload = {"model": model, "input": text}
+        if keep_alive is not None:
+            payload["keep_alive"] = keep_alive
+
         response = await self._request("POST", "/api/embed", payload)
         embeddings = response.get("embeddings", [])
         if not embeddings:
