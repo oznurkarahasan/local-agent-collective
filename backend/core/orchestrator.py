@@ -128,6 +128,7 @@ class Orchestrator:
         """
         logger.info("Initializing Orchestrator: warming up system models...")
         await self._warm_up_models()
+        self._bootstrap_agent_memories()
 
     async def run(self, user_input: str) -> dict:
         """
@@ -192,6 +193,179 @@ class Orchestrator:
             except Exception as exc:
                 logger.warning("Could not warm up role '%s': %s", role, exc)
 
+    def _bootstrap_agent_memories(self) -> None:
+        """
+        Instantiate each registered agent once so memory files are initialized.
+
+        This guarantees skills/errors/training JSON files exist for every enabled
+        agent even before the first routed task reaches that agent.
+        """
+        for config in self.registry.list_all():
+            agent_id = config.get("id")
+            if not agent_id:
+                continue
+
+            agent_class = self.registry.get_class(agent_id)
+            if agent_class is None:
+                continue
+
+            try:
+                memory_dir = self.registry.agents_dir / agent_id / "memory"
+                agent_class(
+                    agent_id=agent_id,
+                    memory_dir=memory_dir,
+                    ollama_client=self.ollama,
+                    model_registry=self.model_registry,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Could not bootstrap memory for agent '%s': %s", agent_id, exc
+                )
+
+    def _heuristic_plan(self, user_input: str) -> Optional[dict]:
+        """
+        Fast deterministic router for obvious single-turn intents.
+
+        This protects against planner drift where general research prompts are
+        accidentally routed to rag_agent.
+        """
+        text = (user_input or "").strip()
+        if not text:
+            return None
+
+        lowered = text.lower()
+        agent_ids = {a.get("id") for a in self.registry.list_all()}
+
+        code_markers = {
+            "code",
+            "python",
+            "javascript",
+            "typescript",
+            "bug",
+            "stack trace",
+            "refactor",
+            "function",
+            "class",
+            "algorithm",
+            "kod",
+            "hata",
+        }
+        document_markers = {
+            "document",
+            "documents",
+            "doc",
+            "pdf",
+            "docx",
+            "markdown",
+            "source file",
+            "loaded",
+            "uploaded",
+            "belge",
+            "dokuman",
+            "doküman",
+            "yuklenen",
+            "yüklenen",
+        }
+        qa_markers = {
+            "validate",
+            "validation",
+            "verify",
+            "check consistency",
+            "logic",
+            "reasoning",
+            "proof",
+            "doğrula",
+            "dogrula",
+            "tutarl",
+            "mantik",
+            "mantık",
+        }
+        research_markers = {
+            "research",
+            "trend",
+            "latest",
+            "state of the art",
+            "market",
+            "compare",
+            "overview",
+            "araştır",
+            "arastir",
+            "populer",
+            "popüler",
+            "guncel",
+            "güncel",
+        }
+
+        def has_any(markers: set[str]) -> bool:
+            return any(marker in lowered for marker in markers)
+
+        if "coder_agent" in agent_ids and has_any(code_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "coder_agent",
+                        "task_type": "code_analysis",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "rag_agent" in agent_ids and has_any(document_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "rag_agent",
+                        "task_type": "document_qa",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "qa_agent" in agent_ids and has_any(qa_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "qa_agent",
+                        "task_type": "qa",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "research_agent" in agent_ids and has_any(research_markers):
+            steps = [
+                {
+                    "id": 1,
+                    "agent": "research_agent",
+                    "task_type": "research",
+                    "input": text,
+                    "depends_on": [],
+                }
+            ]
+            if "qa_agent" in agent_ids:
+                steps.append(
+                    {
+                        "id": 2,
+                        "agent": "qa_agent",
+                        "task_type": "validation",
+                        "input": (
+                            "Validate and stress-test this research answer. "
+                            "Flag weak assumptions briefly:\n\n"
+                            + text
+                        ),
+                        "depends_on": [1],
+                    }
+                )
+            return {"steps": steps}
+
+        return None
+
     async def _plan(self, user_input: str) -> dict:
         """
         Send user input to Gemma 4 (CEO) and get an execution plan.
@@ -199,6 +373,10 @@ class Orchestrator:
         Returns:
             Plan dict with 'steps' list, or empty dict on failure.
         """
+        heuristic = self._heuristic_plan(user_input)
+        if heuristic is not None:
+            return heuristic
+
         # CEO / orchestration model = Gemma 4 E4B
         orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
@@ -236,9 +414,16 @@ class Orchestrator:
             "- depends_on lists step ids that must complete before this step runs\n"
             "- Steps with empty depends_on can run in parallel\n"
             "- Use only agents from the available agents list\n"
+            "- Agent routing guidance:\n"
+            "  - Use rag_agent only for questions that depend on loaded/local documents\n"
+            "  - Use coder_agent for code understanding/generation tasks\n"
+            "  - Use research_agent for general knowledge research/synthesis questions\n"
+            "  - Use qa_agent for reasoning, validation, consistency, and logic checks\n"
+            "  - If a request needs multiple capabilities, include multiple steps and merge via report\n"
             "- Output raw JSON only — no backticks, no prose\n"
             "- If the user is just having a casual conversation, asking a general "
-            'question, or no agents apply, return an empty steps list (`"steps": []`)'
+            'question, or no agents apply, return an empty steps list (`"steps": []`)\n'
+            "- Do not default to rag_agent when no document context is required"
         )
 
         user_message = (
