@@ -196,11 +196,11 @@ class Orchestrator:
             try:
                 model = self.model_registry.get_model_by_role(role)
                 if model:
-                    # Send an empty embed to load the model; keep_alive="-1" keeps it hot
+                    # Send an empty embed to load the model; keep_alive -1 keeps it hot
                     await self.ollama.embed(
                         model=model["id"],
                         text="warmup",
-                        keep_alive="-1",
+                        keep_alive=model.get("keep_alive", -1),
                     )
                     logger.info("Warmed up model '%s' (role: %s)", model["id"], role)
             except Exception as exc:
@@ -369,8 +369,7 @@ class Orchestrator:
                         "task_type": "validation",
                         "input": (
                             "Validate and stress-test this research answer. "
-                            "Flag weak assumptions briefly:\n\n"
-                            + text
+                            "Flag weak assumptions briefly:\n\n" + text
                         ),
                         "depends_on": [1],
                     }
@@ -432,7 +431,8 @@ class Orchestrator:
             "  - Use coder_agent for code understanding/generation tasks\n"
             "  - Use research_agent for general knowledge research/synthesis questions\n"
             "  - Use qa_agent for reasoning, validation, consistency, and logic checks\n"
-            "  - If a request needs multiple capabilities, include multiple steps and merge via report\n"
+            "  - If a request needs multiple capabilities, include multiple steps"
+            " and merge via report\n"
             "- Output raw JSON only — no backticks, no prose\n"
             "- If the user is just having a casual conversation, asking a general "
             'question, or no agents apply, return an empty steps list (`"steps": []`)\n'
@@ -453,7 +453,7 @@ class Orchestrator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                keep_alive="0",  # Gemma 4 unloads after planning is done
+                keep_alive=orchestration_model.get("keep_alive", 0),
             )
 
             plan = _extract_json(response)
@@ -469,7 +469,9 @@ class Orchestrator:
             logger.error("_plan failed: %s", exc)
             return {"steps": []}
 
-    async def _execute_plan(self, plan: dict, session_id: str = "default") -> list[dict]:
+    async def _execute_plan(
+        self, plan: dict, session_id: str = "default"
+    ) -> list[dict]:
         """
         Execute all steps respecting dependencies.
 
@@ -601,7 +603,7 @@ class Orchestrator:
                     {"role": "system", "content": system_content},
                     {"role": "user", "content": user_content},
                 ],
-                keep_alive="0",  # Unload after report is written
+                keep_alive=orchestration_model.get("keep_alive", 0),
             )
             return report
 

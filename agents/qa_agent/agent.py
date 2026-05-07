@@ -98,5 +98,5 @@ class QaAgent(AgentBase):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": str(user_input)},
             ],
-            keep_alive="0",
+            keep_alive=0,
         )

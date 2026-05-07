@@ -40,7 +40,9 @@ class ContextManager:
         if window_size <= summarize_count:
             raise ValueError("window_size must be greater than summarize_count")
 
-        requested_root = data_root or (Path(__file__).parent.parent.parent / "data" / "context")
+        requested_root = data_root or (
+            Path(__file__).parent.parent.parent / "data" / "context"
+        )
         base_root = self._resolve_writable_root(requested_root)
         self.sessions_dir = base_root / "sessions"
         self.summaries_dir = base_root / "summaries"
@@ -60,7 +62,11 @@ class ContextManager:
         agent_id: str | None = None,
     ) -> None:
         """Append a message to global scope and optionally to an agent scope."""
-        normalized = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
+        normalized = (
+            content
+            if isinstance(content, str)
+            else json.dumps(content, ensure_ascii=False)
+        )
         if not normalized:
             return
 
@@ -88,9 +94,13 @@ class ContextManager:
                 )
                 self._write_summaries(session_id, state)
             except OSError as exc:
-                logger.warning("Context persistence failed for session '%s': %s", session_id, exc)
+                logger.warning(
+                    "Context persistence failed for session '%s': %s", session_id, exc
+                )
 
-    def get_context_for_prompt(self, session_id: str, agent_id: str | None = None) -> str:
+    def get_context_for_prompt(
+        self, session_id: str, agent_id: str | None = None
+    ) -> str:
         """Build context string from summaries and active window messages."""
         with self._lock:
             state = self._load_or_create_state(session_id)
@@ -101,7 +111,9 @@ class ContextManager:
         if state is not None:
             return state
 
-        summaries_payload = self._read_summaries(self.summaries_dir / f"{session_id}.json")
+        summaries_payload = self._read_summaries(
+            self.summaries_dir / f"{session_id}.json"
+        )
         state = _SessionState(
             global_buffer=[],
             agent_buffers={},
@@ -111,7 +123,9 @@ class ContextManager:
         self._state[session_id] = state
         return state
 
-    def _maybe_summarize_scope(self, buffer_ref: list[dict], summaries_ref: list[str]) -> None:
+    def _maybe_summarize_scope(
+        self, buffer_ref: list[dict], summaries_ref: list[str]
+    ) -> None:
         if len(buffer_ref) < self.window_size:
             return
 
@@ -157,7 +171,9 @@ class ContextManager:
             if agent_buffer:
                 lines.append(f"Recent agent messages ({agent_id}):")
                 for msg in agent_buffer:
-                    lines.append(f'{msg.get("role", "unknown")}: {msg.get("content", "")}')
+                    lines.append(
+                        f'{msg.get("role", "unknown")}: {msg.get("content", "")}'
+                    )
 
         return "\n".join(lines).strip()
 

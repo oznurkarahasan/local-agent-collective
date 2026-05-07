@@ -6,7 +6,7 @@
       "context_window": 131072,
       "languages": ["en", "tr"],
       "size_gb": 9.6,
-      "keep_alive": "0",
+      "keep_alive": 0,
       "priority": 1
     },
     {
@@ -15,7 +15,7 @@
       "context_window": 32768,
       "languages": ["en", "tr", "code"],
       "size_gb": 1.9,
-      "keep_alive": "0",
+      "keep_alive": 0,
       "priority": 2
     },
     {
@@ -24,7 +24,7 @@
       "context_window": 128000,
       "languages": ["en", "tr"],
       "size_gb": 1.1,
-      "keep_alive": "0",
+      "keep_alive": 0,
       "priority": 2
     },
     {
@@ -33,7 +33,7 @@
       "context_window": 128000,
       "languages": ["en", "tr"],
       "size_gb": 2.2,
-      "keep_alive": "0",
+      "keep_alive": 0,
       "priority": 3
     },
     {
@@ -42,7 +42,7 @@
       "context_window": 128000,
       "languages": ["en", "tr"],
       "size_gb": 2.0,
-      "keep_alive": "0",
+      "keep_alive": 0,
       "priority": 3
     },
     {
@@ -51,7 +51,7 @@
       "context_window": 8192,
       "languages": ["multilingual"],
       "size_gb": 0.274,
-      "keep_alive": "-1"
+      "keep_alive": -1
     }
   ]
 }

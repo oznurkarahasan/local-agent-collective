@@ -1,7 +1,7 @@
 {
   "orchestration": {
     "max_concurrent": 1,
-    "keep_alive": "0",
+    "keep_alive": 300,
     "task_timeout_seconds": 600
   },
   "ollama": {
