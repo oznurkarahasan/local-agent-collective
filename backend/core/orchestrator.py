@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 from backend.core.agent_registry import AgentRegistry
+from backend.core.context_manager import ContextManager
 from backend.core.model_registry import ModelRegistry
 from backend.core.ollama_client import OllamaClient
 
@@ -116,6 +117,7 @@ class Orchestrator:
 
         config_dir = config_dir or (Path(__file__).parent.parent.parent / "config")
         self.model_registry = ModelRegistry(config_path=config_dir / "models.json")
+        self.context_manager = ContextManager()
 
     # ------------------------------------------------------------------
     # Public API
@@ -128,8 +130,9 @@ class Orchestrator:
         """
         logger.info("Initializing Orchestrator: warming up system models...")
         await self._warm_up_models()
+        self._bootstrap_agent_memories()
 
-    async def run(self, user_input: str) -> dict:
+    async def run(self, user_input: str, session_id: str = "default") -> dict:
         """
         Main entry point. Receives user input and returns final report.
 
@@ -139,7 +142,12 @@ class Orchestrator:
         Returns:
             Dict with 'success', 'plan', 'results', and 'report' fields.
         """
-        plan = await self._plan(user_input)
+        self.context_manager.append_message(
+            session_id=session_id,
+            role="user",
+            content=user_input,
+        )
+        plan = await self._plan(user_input, session_id=session_id)
 
         if plan is None:
             return {
@@ -155,10 +163,16 @@ class Orchestrator:
         if not steps:
             # Direct conversation or unrecognized task - skip agent execution
             results = []
-            report = await self._report(user_input, plan, results)
+            report = await self._report(user_input, session_id, plan, results)
         else:
-            results = await self._execute_plan(plan)
-            report = await self._report(user_input, plan, results)
+            results = await self._execute_plan(plan, session_id=session_id)
+            report = await self._report(user_input, session_id, plan, results)
+
+        self.context_manager.append_message(
+            session_id=session_id,
+            role="assistant",
+            content=report,
+        )
 
         return {
             "success": True,
@@ -182,23 +196,199 @@ class Orchestrator:
             try:
                 model = self.model_registry.get_model_by_role(role)
                 if model:
-                    # Send an empty embed to load the model; keep_alive="-1" keeps it hot
+                    # Send an empty embed to load the model; keep_alive -1 keeps it hot
                     await self.ollama.embed(
                         model=model["id"],
                         text="warmup",
-                        keep_alive="-1",
+                        keep_alive=model.get("keep_alive", -1),
                     )
                     logger.info("Warmed up model '%s' (role: %s)", model["id"], role)
             except Exception as exc:
                 logger.warning("Could not warm up role '%s': %s", role, exc)
 
-    async def _plan(self, user_input: str) -> dict:
+    def _bootstrap_agent_memories(self) -> None:
+        """
+        Instantiate each registered agent once so memory files are initialized.
+
+        This guarantees skills/errors/training JSON files exist for every enabled
+        agent even before the first routed task reaches that agent.
+        """
+        for config in self.registry.list_all():
+            agent_id = config.get("id")
+            if not agent_id:
+                continue
+
+            agent_class = self.registry.get_class(agent_id)
+            if agent_class is None:
+                continue
+
+            try:
+                memory_dir = self.registry.agents_dir / agent_id / "memory"
+                agent_class(
+                    agent_id=agent_id,
+                    memory_dir=memory_dir,
+                    ollama_client=self.ollama,
+                    model_registry=self.model_registry,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Could not bootstrap memory for agent '%s': %s", agent_id, exc
+                )
+
+    def _heuristic_plan(self, user_input: str) -> Optional[dict]:
+        """
+        Fast deterministic router for obvious single-turn intents.
+
+        This protects against planner drift where general research prompts are
+        accidentally routed to rag_agent.
+        """
+        text = (user_input or "").strip()
+        if not text:
+            return None
+
+        lowered = text.lower()
+        agent_ids = {a.get("id") for a in self.registry.list_all()}
+
+        code_markers = {
+            "code",
+            "python",
+            "javascript",
+            "typescript",
+            "bug",
+            "stack trace",
+            "refactor",
+            "function",
+            "class",
+            "algorithm",
+            "kod",
+            "hata",
+        }
+        document_markers = {
+            "document",
+            "documents",
+            "doc",
+            "pdf",
+            "docx",
+            "markdown",
+            "source file",
+            "loaded",
+            "uploaded",
+            "belge",
+            "dokuman",
+            "doküman",
+            "yuklenen",
+            "yüklenen",
+        }
+        qa_markers = {
+            "validate",
+            "validation",
+            "verify",
+            "check consistency",
+            "logic",
+            "reasoning",
+            "proof",
+            "doğrula",
+            "dogrula",
+            "tutarl",
+            "mantik",
+            "mantık",
+        }
+        research_markers = {
+            "research",
+            "trend",
+            "latest",
+            "state of the art",
+            "market",
+            "compare",
+            "overview",
+            "araştır",
+            "arastir",
+            "populer",
+            "popüler",
+            "guncel",
+            "güncel",
+        }
+
+        def has_any(markers: set[str]) -> bool:
+            return any(marker in lowered for marker in markers)
+
+        if "coder_agent" in agent_ids and has_any(code_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "coder_agent",
+                        "task_type": "code_analysis",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "rag_agent" in agent_ids and has_any(document_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "rag_agent",
+                        "task_type": "document_qa",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "qa_agent" in agent_ids and has_any(qa_markers):
+            return {
+                "steps": [
+                    {
+                        "id": 1,
+                        "agent": "qa_agent",
+                        "task_type": "qa",
+                        "input": text,
+                        "depends_on": [],
+                    }
+                ]
+            }
+
+        if "research_agent" in agent_ids and has_any(research_markers):
+            steps = [
+                {
+                    "id": 1,
+                    "agent": "research_agent",
+                    "task_type": "research",
+                    "input": text,
+                    "depends_on": [],
+                }
+            ]
+            if "qa_agent" in agent_ids:
+                steps.append(
+                    {
+                        "id": 2,
+                        "agent": "qa_agent",
+                        "task_type": "validation",
+                        "input": (
+                            "Validate and stress-test this research answer. "
+                            "Flag weak assumptions briefly:\n\n" + text
+                        ),
+                        "depends_on": [1],
+                    }
+                )
+            return {"steps": steps}
+
+        return None
+
+    async def _plan(self, user_input: str, session_id: str = "default") -> dict:
         """
         Send user input to Gemma 4 (CEO) and get an execution plan.
 
         Returns:
             Plan dict with 'steps' list, or empty dict on failure.
         """
+        heuristic = self._heuristic_plan(user_input)
+        if heuristic is not None:
+            return heuristic
+
         # CEO / orchestration model = Gemma 4 E4B
         orchestration_model = self.model_registry.get_model_by_role("orchestration")
         model_id = orchestration_model["id"]
@@ -236,13 +426,22 @@ class Orchestrator:
             "- depends_on lists step ids that must complete before this step runs\n"
             "- Steps with empty depends_on can run in parallel\n"
             "- Use only agents from the available agents list\n"
+            "- Agent routing guidance:\n"
+            "  - Use rag_agent only for questions that depend on loaded/local documents\n"
+            "  - Use coder_agent for code understanding/generation tasks\n"
+            "  - Use research_agent for general knowledge research/synthesis questions\n"
+            "  - Use qa_agent for reasoning, validation, consistency, and logic checks\n"
+            "  - If a request needs multiple capabilities, include multiple steps"
+            " and merge via report\n"
             "- Output raw JSON only — no backticks, no prose\n"
             "- If the user is just having a casual conversation, asking a general "
-            'question, or no agents apply, return an empty steps list (`"steps": []`)'
+            'question, or no agents apply, return an empty steps list (`"steps": []`)\n'
+            "- Do not default to rag_agent when no document context is required"
         )
 
         user_message = (
             f"Available agents:\n{agents_description}\n\n"
+            f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
             f"User request: {user_input}\n\n"
             "Create an execution plan."
         )
@@ -254,7 +453,7 @@ class Orchestrator:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                keep_alive="0",  # Gemma 4 unloads after planning is done
+                keep_alive=orchestration_model.get("keep_alive", 0),
             )
 
             plan = _extract_json(response)
@@ -270,7 +469,9 @@ class Orchestrator:
             logger.error("_plan failed: %s", exc)
             return {"steps": []}
 
-    async def _execute_plan(self, plan: dict) -> list[dict]:
+    async def _execute_plan(
+        self, plan: dict, session_id: str = "default"
+    ) -> list[dict]:
         """
         Execute all steps respecting dependencies.
 
@@ -296,7 +497,7 @@ class Orchestrator:
                 )
                 break
 
-            tasks = [self._execute_step(step, completed) for step in ready]
+            tasks = [self._execute_step(step, completed, session_id) for step in ready]
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for step, result in zip(ready, batch_results):
@@ -313,7 +514,7 @@ class Orchestrator:
 
         return list(completed.values())
 
-    async def _execute_step(self, step: dict, context: dict) -> dict:
+    async def _execute_step(self, step: dict, context: dict, session_id: str) -> dict:
         """Execute a single plan step using the appropriate agent."""
         async with self.semaphore:
             agent_id = step.get("agent")
@@ -341,13 +542,32 @@ class Orchestrator:
                 "type": step.get("task_type", "unknown"),
                 "input": step.get("input", ""),
                 "context": context,
+                "conversation_context": self.context_manager.get_context_for_prompt(
+                    session_id=session_id, agent_id=agent_id
+                ),
             }
 
+            self.context_manager.append_message(
+                session_id=session_id,
+                role="user",
+                content=task["input"],
+                agent_id=agent_id,
+            )
             result = await agent.run(task)
             result["step_id"] = step["id"]
+            output_text = result.get("output")
+            if output_text is not None:
+                self.context_manager.append_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=str(output_text),
+                    agent_id=agent_id,
+                )
             return result
 
-    async def _report(self, user_input: str, plan: dict, results: list[dict]) -> str:
+    async def _report(
+        self, user_input: str, session_id: str, plan: dict, results: list[dict]
+    ) -> str:
         """
         Synthesize all results into a final report via Gemma 4 (CEO).
         """
@@ -364,9 +584,13 @@ class Orchestrator:
         )
 
         if not results:
-            user_content = f"User: {user_input}\n\nAnswer:"
+            user_content = (
+                f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
+                f"User: {user_input}\n\nAnswer:"
+            )
         else:
             user_content = (
+                f"Context:\n{self.context_manager.get_context_for_prompt(session_id)}\n\n"
                 f"Original request: {user_input}\n\n"
                 f"Agent results:\n{results_summary}\n\n"
                 "Write a final report synthesizing these results."
@@ -379,7 +603,7 @@ class Orchestrator:
                     {"role": "system", "content": system_content},
                     {"role": "user", "content": user_content},
                 ],
-                keep_alive="0",  # Unload after report is written
+                keep_alive=orchestration_model.get("keep_alive", 0),
             )
             return report
 

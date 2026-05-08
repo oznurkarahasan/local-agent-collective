@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))  # noqa: E402
 
 from backend.core.platform_utils import PlatformUtils  # noqa: E402
 from backend.core.ollama_client import OllamaClient  # noqa: E402
+from backend.core.orchestrator import Orchestrator  # noqa: E402
 from agents.rag_agent.agent import RagAgent  # noqa: E402
 from agents.coder_agent.agent import CoderAgent  # noqa: E402
 
@@ -57,6 +58,7 @@ class CLI:
         self.ollama = OllamaClient()
         self.rag_agent = None
         self.coder_agent = None
+        self.orchestrator = None
         self.loaded_docs: list[str] = []
         self.loaded_code: list[str] = []
 
@@ -114,6 +116,10 @@ class CLI:
             chroma_dir=chroma_dir,
         )
         print("  ✓ Coder Agent ready")
+
+        self.orchestrator = Orchestrator(ollama_client=self.ollama)
+        await self.orchestrator.initialize()
+        print("  ✓ Orchestrator ready (collective mode)")
         print()
 
     async def _loop(self):
@@ -221,27 +227,36 @@ class CLI:
             print(f"  ✗ Failed to load: {result.get('error')}")
 
     async def _cmd_ask(self, question: str):
-        """Ask a question — routes to the agent with loaded files."""
+        """Ask a question via orchestrator so all agents can collaborate."""
         if not question:
             print("Usage: ask <question>")
             return
 
-        has_docs = bool(self.loaded_docs)
-        has_code = bool(self.loaded_code)
-
-        if not has_docs and not has_code:
+        if not self.loaded_docs and not self.loaded_code:
             print("No files loaded. Use 'load <file>' first.")
             return
 
         print("Thinking...")
+        # Prefer collective orchestration when available. Tests and lightweight
+        # CLI usage may run without orchestrator initialization, so keep the
+        # legacy direct-agent fallback path.
+        if self.orchestrator is not None:
+            result = await self.orchestrator.run(user_input=question)
+            if result.get("success"):
+                report = result.get("report", "")
+                print(f"\n{report}\n")
+            else:
+                print(f"  ✗ Query failed: {result.get('error')}")
+            return
 
-        # If both agents have files, query both and combine
+        has_docs = bool(self.loaded_docs)
+        has_code = bool(self.loaded_code)
         if has_docs and has_code:
             await self._ask_both(question)
-        elif has_code:
-            await self._ask_agent(self.coder_agent, question, "query")
-        else:
+        elif has_docs:
             await self._ask_agent(self.rag_agent, question, "query")
+        else:
+            await self._ask_agent(self.coder_agent, question, "query")
 
     async def _ask_agent(self, agent, question: str, task_type: str):
         """Query a single agent and print the result."""
@@ -307,6 +322,7 @@ class CLI:
 
         coder_info = self.coder_agent.get_agent_info()
         print(f"  Coder Agent:  ✓ ready ({len(coder_info['skills'])} skills)")
+        print(f"  Orchestrator: {'✓ ready' if self.orchestrator else '✗ not ready'}")
         print()
 
     def _cmd_memory_stats(self):

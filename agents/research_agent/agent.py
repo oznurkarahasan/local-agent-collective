@@ -102,5 +102,5 @@ class ResearchAgent(AgentBase):
                     "content": f"Please research and explain the following:\n\n{str(user_input)}",
                 },
             ],
-            keep_alive="0",
+            keep_alive=0,
         )

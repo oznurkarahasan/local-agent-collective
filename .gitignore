@@ -60,7 +60,10 @@ htmlcov/
 
 **/*.json
 !**/config/*.json
+!agents/*/config.json
 !**/manifest.json
 !package.json
 
 **/*.log
+
+notes.md

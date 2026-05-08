@@ -350,5 +350,5 @@ class RagAgent(AgentBase):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            keep_alive="0",
+            keep_alive=0,
         )

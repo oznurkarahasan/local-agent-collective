@@ -106,7 +106,7 @@ class OllamaClient:
         self,
         model: str,
         messages: list[dict],
-        keep_alive: str = "0",
+        keep_alive: int | str = 0,
         stream: bool = False,
     ) -> str:
         """
@@ -138,7 +138,7 @@ class OllamaClient:
         self,
         model: str,
         text: str,
-        keep_alive: Optional[str] = None,
+        keep_alive: int | str | None = None,
     ) -> list[float]:
         """
         Generate embeddings for the given text.
@@ -182,7 +182,7 @@ class OllamaClient:
                 {
                     "model": model,
                     "messages": [],
-                    "keep_alive": "0",
+                    "keep_alive": 0,
                 },
             )
             return True

@@ -85,7 +85,7 @@ async def test_chat_keep_alive_default(client):
     with patch.object(client, "_request", new=AsyncMock(return_value=mock_data)) as mock_req:
         await client.chat(model="qwen3:4b", messages=[])
         call_args = mock_req.call_args
-        assert call_args[0][2]["keep_alive"] == "0"
+        assert call_args[0][2]["keep_alive"] == 0
 
 
 # --- embed ---
